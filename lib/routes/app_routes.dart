@@ -3,8 +3,12 @@ class Routes {
   static const roleSelector = '/role-selector';
   static const loginView = '/loginView';
   static const login = '/login';
+  static const home = '/home';
   static const bottomBar = '/bottomBar';
   static const productDetail = '/productDetail';
+  
+  // User routes
+  static const userSignup = '/user/signup';
   
   // Vendor routes
   static const vendorSignup = '/vendor/signup';

@@ -2,23 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../controllers/address_controller.dart';
-import '../../controllers/cart_controller.dart';
-import '../../controllers/coupon_controller.dart';
-import '../../controllers/orders_controller.dart';
-import '../../controllers/wallet_controller.dart';
-import '../../routes/app_routes.dart';
-import '../orders/widgets/coupon_bottom_sheet.dart';
-import '../profile/views/address_list_view.dart';
+import '../cart/controllers/cart_controller.dart';
+import '../order/controllers/order_controller.dart';
 
 class OrderSummaryView extends StatelessWidget {
   const OrderSummaryView({super.key});
 
   CartController get cartController => Get.find<CartController>();
-  CouponController get couponController => Get.find<CouponController>();
-  OrdersController get ordersController => Get.find<OrdersController>();
-  AddressController get addressController => Get.find<AddressController>();
-  WalletController get walletController => Get.find<WalletController>();
+  OrderController get orderController => Get.find<OrderController>();
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +27,7 @@ class OrderSummaryView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Delivery Address Section
+                  // Delivery Address Section (Static for now)
                   Container(
                     padding: EdgeInsets.all(AppSizes.width(16)),
                     decoration: BoxDecoration(
@@ -54,98 +45,51 @@ class OrderSummaryView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Delivery Address',
-                              style: TextStyle(
-                                fontSize: AppSizes.fontL,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Get.to(() => AddressListView()),
-                              child: Text('Change'),
-                            ),
-                          ],
+                        Text(
+                          'Delivery Address',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontL,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         SizedBox(height: AppSizes.height(8)),
-                        Obx(() {
-                          final defaultAddress = addressController.addresses
-                              .firstWhereOrNull((addr) => addr.isDefault);
-                          
-                          if (defaultAddress == null) {
-                            return GestureDetector(
-                              onTap: () => Get.to(() => AddressListView()),
-                              child: Container(
-                                padding: EdgeInsets.all(AppSizes.width(16)),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                                  border: Border.all(color: Colors.red),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.add_location, color: Colors.red),
-                                    SizedBox(width: AppSizes.width(8)),
-                                    Text(
-                                      'Add Delivery Address',
-                                      style: TextStyle(
-                                        fontSize: AppSizes.fontM,
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-                          
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                defaultAddress.fullName,
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontL,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(height: AppSizes.height(4)),
-                              Text(
-                                '${defaultAddress.addressLine1}${defaultAddress.addressLine2.isNotEmpty ? ', ${defaultAddress.addressLine2}' : ''}',
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontM,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              Text(
-                                '${defaultAddress.city}, ${defaultAddress.state} - ${defaultAddress.pincode}',
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontM,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              SizedBox(height: AppSizes.height(4)),
-                              Text(
-                                defaultAddress.phone,
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontM,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
+                        Text(
+                          'John Doe',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontL,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: AppSizes.height(4)),
+                        Text(
+                          '123 Main Street, Apartment 4B',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontM,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        Text(
+                          'New York, NY - 10001',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontM,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: AppSizes.height(4)),
+                        Text(
+                          '+1 234 567 8900',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontM,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   
                   SizedBox(height: AppSizes.height(16)),
                   
-                  // Order Items
+                  // Order Items from API
                   Container(
                     padding: EdgeInsets.all(AppSizes.width(16)),
                     decoration: BoxDecoration(
@@ -184,11 +128,23 @@ class OrderSummaryView extends StatelessWidget {
                                       color: Colors.grey[100],
                                       borderRadius: BorderRadius.circular(AppSizes.radius(8)),
                                     ),
-                                    child: Icon(
-                                      Icons.image,
-                                      size: AppSizes.fontXXXL,
-                                      color: Colors.grey[400],
-                                    ),
+                                    child: item.image != null
+                                        ? Image.network(
+                                            'http://localhost/dailygro/uploads/${item.image}',
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Icon(
+                                                Icons.image,
+                                                size: AppSizes.fontXXXL,
+                                                color: Colors.grey[400],
+                                              );
+                                            },
+                                          )
+                                        : Icon(
+                                            Icons.image,
+                                            size: AppSizes.fontXXXL,
+                                            color: Colors.grey[400],
+                                          ),
                                   ),
                                   SizedBox(width: AppSizes.width(12)),
                                   Expanded(
@@ -196,14 +152,14 @@ class OrderSummaryView extends StatelessWidget {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          item.product.name ?? '',
+                                          item.name,
                                           style: TextStyle(
                                             fontSize: AppSizes.fontM,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         Text(
-                                          '${item.currentUnit} × ${item.quantity.value}',
+                                          '${item.weight} ${item.unit} × ${item.quantity}',
                                           style: TextStyle(
                                             fontSize: AppSizes.fontS,
                                             color: Colors.grey[600],
@@ -213,7 +169,7 @@ class OrderSummaryView extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '₹${item.totalPrice.toStringAsFixed(0)}',
+                                    '₹${item.itemTotal.toStringAsFixed(0)}',
                                     style: TextStyle(
                                       fontSize: AppSizes.fontM,
                                       fontWeight: FontWeight.w600,
@@ -231,7 +187,7 @@ class OrderSummaryView extends StatelessWidget {
                   
                   SizedBox(height: AppSizes.height(16)),
                   
-                  // Payment Method Selection
+                  // Payment Method Selection (Static for now)
                   Container(
                     padding: EdgeInsets.all(AppSizes.width(16)),
                     decoration: BoxDecoration(
@@ -258,101 +214,38 @@ class OrderSummaryView extends StatelessWidget {
                         ),
                         SizedBox(height: AppSizes.height(12)),
                         
-                        Obx(() {
-                          final deliveryFee = cartController.totalAmount >= 299 ? 0 : 49;
-                          final discount = couponController.getDiscountAmount(cartController.totalAmount);
-                          final finalAmount = cartController.totalAmount + deliveryFee - discount;
-                          final canPayWithWallet = walletController.canPayWithWallet(finalAmount);
-                          
-                          return Column(
+                        Container(
+                          padding: EdgeInsets.all(AppSizes.width(12)),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(AppSizes.radius(8)),
+                            border: Border.all(color: Colors.green),
+                          ),
+                          child: Row(
                             children: [
-                              // Wallet Payment Option
-                              Container(
-                                padding: EdgeInsets.all(AppSizes.width(12)),
-                                decoration: BoxDecoration(
-                                  color: canPayWithWallet ? Colors.blue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                                  border: Border.all(
-                                    color: canPayWithWallet ? Colors.blue : Colors.grey,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.account_balance_wallet,
-                                      color: canPayWithWallet ? Colors.blue : Colors.grey,
-                                      size: AppSizes.fontXL,
-                                    ),
-                                    SizedBox(width: AppSizes.width(12)),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Pay with Wallet',
-                                            style: TextStyle(
-                                              fontSize: AppSizes.fontM,
-                                              fontWeight: FontWeight.w600,
-                                              color: canPayWithWallet ? Colors.black : Colors.grey,
-                                            ),
-                                          ),
-                                          Text(
-                                            'Balance: ₹${walletController.walletBalance.value.toStringAsFixed(0)}',
-                                            style: TextStyle(
-                                              fontSize: AppSizes.fontS,
-                                              color: canPayWithWallet ? Colors.blue : Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (!canPayWithWallet)
-                                      Text(
-                                        'Insufficient Balance',
-                                        style: TextStyle(
-                                          fontSize: AppSizes.fontS,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                              Icon(
+                                Icons.money,
+                                color: Colors.green,
+                                size: AppSizes.fontXL,
                               ),
-                              
-                              SizedBox(height: AppSizes.height(8)),
-                              
-                              // Other Payment Methods
-                              Container(
-                                padding: EdgeInsets.all(AppSizes.width(12)),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.payment,
-                                      color: Colors.grey[600],
-                                      size: AppSizes.fontXL,
-                                    ),
-                                    SizedBox(width: AppSizes.width(12)),
-                                    Text(
-                                      'Other Payment Methods',
-                                      style: TextStyle(
-                                        fontSize: AppSizes.fontM,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
+                              SizedBox(width: AppSizes.width(12)),
+                              Text(
+                                'Cash on Delivery',
+                                style: TextStyle(
+                                  fontSize: AppSizes.fontM,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green,
                                 ),
                               ),
                             ],
-                          );
-                        }),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   
+                  // Commented out coupon section
+                  /*
                   SizedBox(height: AppSizes.height(16)),
                   
                   // Apply Coupon Section
@@ -379,16 +272,14 @@ class OrderSummaryView extends StatelessWidget {
                           ),
                           SizedBox(width: AppSizes.width(8)),
                           Expanded(
-                            child: Obx(() => Text(
-                              couponController.selectedCoupon.value != null
-                                  ? 'Coupon Applied: ${couponController.selectedCoupon.value!.code}'
-                                  : 'Apply Coupon',
+                            child: Text(
+                              'Apply Coupon',
                               style: TextStyle(
                                 fontSize: AppSizes.fontM,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.green,
                               ),
-                            )),
+                            ),
                           ),
                           Icon(
                             Icons.arrow_forward_ios,
@@ -399,12 +290,13 @@ class OrderSummaryView extends StatelessWidget {
                       ),
                     ),
                   ),
+                  */
                 ],
               ),
             ),
           ),
           
-          // Bill Summary
+          // Bill Summary from API
           Container(
             padding: EdgeInsets.all(AppSizes.width(16)),
             decoration: BoxDecoration(
@@ -453,16 +345,18 @@ class OrderSummaryView extends StatelessWidget {
                       ),
                     ),
                     Obx(() => Text(
-                      cartController.totalAmount >= 299 ? 'FREE' : '₹49',
+                      cartController.totalAmount.value >= 299 ? 'FREE' : '₹49',
                       style: TextStyle(
                         fontSize: AppSizes.fontL,
                         fontWeight: FontWeight.w600,
-                        color: cartController.totalAmount >= 299 ? Colors.green : Colors.black,
+                        color: cartController.totalAmount.value >= 299 ? Colors.green : Colors.black,
                       ),
                     )),
                   ],
                 ),
                 
+                // Commented out discount section
+                /*
                 // Discount Row
                 Obx(() {
                   final discount = couponController.getDiscountAmount(cartController.totalAmount);
@@ -496,6 +390,7 @@ class OrderSummaryView extends StatelessWidget {
                   }
                   return SizedBox.shrink();
                 }),
+                */
                 
                 SizedBox(height: AppSizes.height(8)),
                 Divider(),
@@ -512,9 +407,8 @@ class OrderSummaryView extends StatelessWidget {
                       ),
                     ),
                     Obx(() {
-                      final deliveryFee = cartController.totalAmount >= 299 ? 0 : 49;
-                      final discount = couponController.getDiscountAmount(cartController.totalAmount);
-                      final finalAmount = cartController.totalAmount + deliveryFee - discount;
+                      final deliveryFee = cartController.totalAmount.value >= 299 ? 0 : 49;
+                      final finalAmount = cartController.totalAmount.value + deliveryFee;
                       return Text(
                         '₹${finalAmount.toStringAsFixed(0)}',
                         style: TextStyle(
@@ -532,90 +426,67 @@ class OrderSummaryView extends StatelessWidget {
                 // Place Order Button
                 SizedBox(
                   width: double.infinity,
-                  child: Obx(() {
-                    final hasAddress = addressController.addresses
-                        .any((addr) => addr.isDefault);
-                    
-                    return ElevatedButton(
-                      onPressed: hasAddress ? () async {
-                        final deliveryFee = cartController.totalAmount >= 299 ? 0.0 : 49.0;
-                        final discount = couponController.getDiscountAmount(cartController.totalAmount);
-                        final finalAmount = cartController.totalAmount + deliveryFee - discount;
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final deliveryFee = cartController.totalAmount.value >= 299 ? 0.0 : 49.0;
+                      final finalAmount = cartController.totalAmount.value + deliveryFee;
+                      
+                      try {
+                        // Prepare order items for API
+                        final orderItems = cartController.cartItems.map((item) => {
+                          'product_id': item.productId,
+                          'quantity': item.quantity,
+                          'price': item.price,
+                        }).toList();
                         
-                        try {
-                          // Process payment
-                          if (walletController.canPayWithWallet(finalAmount)) {
-                            walletController.deductMoney(
-                              finalAmount,
-                              'Order payment',
-                              orderId: DateTime.now().millisecondsSinceEpoch.toString(),
-                            );
-                          }
+                        // Create order via API
+                        final result = await orderController.createOrder(
+                          totalAmount: finalAmount,
+                          addressId: 1, // Static address ID for now
+                          paymentMethod: 'cash',
+                          items: orderItems,
+                        );
+                        
+                        if (result != null) {
+                          // Clear cart
+                          cartController.clearCart();
                           
-                          // Get default address
-                          final defaultAddress = addressController.addresses.firstWhereOrNull(
-                            (addr) => addr.isDefault
-                          );
-                          
-                          if (defaultAddress == null) {
-                            throw Exception('No default address found');
-                          }
-                          
-                          // Make a copy of cart items BEFORE clearing
-                          final orderedItemsCopy = cartController.cartItems.toList();
-                          
-                          // Place the order
-                          final orderId = await ordersController.placeOrder(
-                            items: orderedItemsCopy,
-                            totalAmount: finalAmount,
-                            deliveryAddress: '${defaultAddress.addressLine1}, ${defaultAddress.city}, ${defaultAddress.state} - ${defaultAddress.pincode}',
-                            paymentMethod: 'Wallet',
-                          );
-                          
-                          if (orderId != null) {
-                            // Clear cart and coupon
-                            cartController.clearCart();
-                            couponController.clearSelectedCoupon();
-                            
-                            // Navigate to success screen using named route
-                            Get.offAllNamed(
-                              Routes.productDetail,
-                              arguments: orderedItemsCopy,
-                              parameters: {
-                                'orderId': orderId,
-                                'amount': finalAmount.toStringAsFixed(2),
-                              },
-                            );
-                          } else {
-                            throw Exception('Failed to place order');
-                          }
-                        } catch (e) {
+                          // Show success message
                           Get.snackbar(
-                            'Error',
-                            'Failed to place order: ${e.toString()}',
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: Colors.red,
+                            'Success',
+                            'Order placed successfully!',
+                            backgroundColor: Colors.green,
                             colorText: Colors.white,
                           );
+                          
+                          // Navigate back to home
+                          Get.offAllNamed('/home');
                         }
-                      } : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: hasAddress ? Colors.green : Colors.grey,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: AppSizes.height(16)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                        ),
+                      } catch (e) {
+                        Get.snackbar(
+                          'Error',
+                          'Failed to place order: ${e.toString()}',
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: AppSizes.height(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSizes.radius(8)),
                       ),
-                      child: Text(
-                        hasAddress ? 'PLACE ORDER' : 'ADD ADDRESS TO CONTINUE',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontL,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    ),
+                    child: Text(
+                      'PLACE ORDER',
+                      style: TextStyle(
+                        fontSize: AppSizes.fontL,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  }),
+                    ),
+                  ),
                 ),
               ],
             ),

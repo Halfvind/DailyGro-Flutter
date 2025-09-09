@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../controllers/cart_controller.dart';
 import '../data/all_products_data.dart';
-import '../data/category_data.dart';
-import '../models/category_model.dart';
+import '../../../models/category_model.dart';
+import '../../category/controllers/category_controller.dart';
+import '../../product/controllers/product_controller.dart';
+import '../../cart/controllers/cart_controller.dart';
+import '../../wishlist/controllers/wishlist_controller.dart';
+import '../../order/controllers/order_controller.dart';
 import '../models/home_product_model.dart';
 
 
@@ -38,12 +41,24 @@ class HomeController extends GetxController {
   // Getter for convenience
   List<CategoryModel> get categories => categoryList;
 
-  final CartController cartController = Get.find<CartController>();
+  final CategoryController categoryController = Get.put(CategoryController());
+  final ProductController productController = Get.put(ProductController());
+  final CartController cartController = Get.put(CartController());
+  final WishlistController wishlistController = Get.put(WishlistController());
+  final OrderController orderController = Get.put(OrderController());
 
   @override
   void onInit() {
     super.onInit();
     initializeHomeData();
+  }
+  
+  @override
+  void onReady() {
+    super.onReady();
+    // Initialize API-based controllers
+    cartController.loadCart();
+    wishlistController.loadWishlist();
   }
 
   void initializeHomeData() async {
@@ -51,7 +66,9 @@ class HomeController extends GetxController {
 
     await Future.delayed(const Duration(seconds: 1)); // Simulated delay
 
-    categoryList.value = CategoryData.categories;
+    // Load categories from API
+    await categoryController.loadCategories();
+    categoryList.value = categoryController.categories;
     featuredProducts.value = getFeaturedProducts();
     recommendedProducts.value = getRecommendedProducts();
 

@@ -124,7 +124,7 @@ class QuickActionsFilterView extends StatelessWidget {
                                 "product": product,
                                 "categoryId": product.categoryId,
                               }),
-                          child: ProductCard(product: product),
+                         /* child: ProductCard(product: product),*/
                         );
                       },
                     ),

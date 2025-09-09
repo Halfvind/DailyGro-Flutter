@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../CommonComponents/controllers/global_controller.dart';
 import '../../themes/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,20 +9,22 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final globalController=GlobalController();
   @override
   void initState() {
     super.initState();
     _navigateToRoleSelector();
   }
 
-  _navigateToRoleSelector() async {
-    await Future.delayed(Duration(seconds: 3));
-    Get.offAllNamed('/role-selector');
+  Future<void> _navigateToRoleSelector() async {
+    await Future.delayed(const Duration(seconds: 3));
+    globalController.checkAutoLogin();
+  // Get.offAllNamed('/role-selector');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(
         child: Column(

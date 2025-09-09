@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../CommonComponents/CommonWidgets/product_card.dart';
 import '../../../themes/app_colors.dart';
-import '../data/all_products_data.dart';
+import '../../product/controllers/product_controller.dart';
 import '../../product_detail/product_detail_view.dart';
 
 class FeaturedProductsView extends StatelessWidget {
@@ -11,7 +11,7 @@ class FeaturedProductsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredProducts = getFeaturedProducts();
+    final productController = Get.find<ProductController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -19,7 +19,7 @@ class FeaturedProductsView extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: featuredProducts.isEmpty
+      body: Obx(() => productController.featuredProducts.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -52,20 +52,20 @@ class FeaturedProductsView extends StatelessWidget {
                   crossAxisSpacing: AppSizes.width(12),
                   mainAxisSpacing: AppSizes.height(12),
                 ),
-                itemCount: featuredProducts.length,
+                itemCount: productController.featuredProducts.length,
                 itemBuilder: (context, index) {
-                  final product = featuredProducts[index];
+                  final product = productController.featuredProducts[index];
                   return GestureDetector(
-                    onTap: () => Get.to(() => ProductDetailView(product: product),
+                   /* onTap: () => Get.to(() => ProductDetailView(product: product),
                         arguments: {
                           "product": product,
                           "categoryId": product.categoryId,
-                        }),
+                        }),*/
                     child: ProductCard(product: product),
                   );
                 },
               ),
-            ),
+            )),
     );
   }
 }

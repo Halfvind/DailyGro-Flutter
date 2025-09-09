@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/wishlist_controller.dart';
-import '../../../CommonComponents/CommonWidgets/product_card.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../themes/app_colors.dart';
+import '../../../CommonComponents/CommonWidgets/product_card.dart';
+import '../../../models/product_model.dart';
+import '../../wishlist/controllers/wishlist_controller.dart';
 
-class WishlistView extends StatelessWidget {
+class WishlistView extends GetView<WishlistController> {
   const WishlistView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final WishlistController wishlistController = Get.find<WishlistController>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Wishlist'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
       body: Obx(() {
-        if (wishlistController.wishlistItems.isEmpty) {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.wishlistItems.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -33,16 +35,15 @@ class WishlistView extends StatelessWidget {
                 Text(
                   'Your wishlist is empty',
                   style: TextStyle(
-                    fontSize: AppSizes.font(18),
+                    fontSize: AppSizes.fontL,
                     color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: AppSizes.height(8)),
                 Text(
-                  'Add products you love to your wishlist',
+                  'Add items you love to see them here',
                   style: TextStyle(
-                    fontSize: AppSizes.font(14),
+                    fontSize: AppSizes.fontM,
                     color: Colors.grey[500],
                   ),
                 ),
@@ -52,17 +53,45 @@ class WishlistView extends StatelessWidget {
         }
 
         return Padding(
-          padding: EdgeInsets.all(AppSizes.width(16)),
+          padding: EdgeInsets.all(AppSizes.width(12)),
           child: GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.55,
+              childAspectRatio: 0.65,
               crossAxisSpacing: AppSizes.width(12),
               mainAxisSpacing: AppSizes.height(12),
             ),
-            itemCount: wishlistController.wishlistItems.length,
+            itemCount: controller.wishlistItems.length,
             itemBuilder: (context, index) {
-              return ProductCard(product: wishlistController.wishlistItems[index]);
+              final wishlistItem = controller.wishlistItems[index];
+              
+              // Convert WishlistModel to ProductModel for ProductCard
+              final product = ProductModel(
+                productId: wishlistItem.productId,
+                vendorId: 0,
+                categoryId: 0,
+                name: wishlistItem.name,
+                description: '',
+                price: wishlistItem.price,
+                originalPrice: wishlistItem.originalPrice,
+                stockQuantity: 0,
+                unit: wishlistItem.unit,
+                weight: wishlistItem.weight,
+                image: wishlistItem.image,
+                isFeatured: wishlistItem.isFeatured,
+                isRecommended: wishlistItem.isRecommended,
+                rating: wishlistItem.rating,
+                avgRating: 0,
+                reviewCount: 0,
+                categoryName: wishlistItem.categoryName,
+                vendorName: wishlistItem.vendorName,
+                vendorOwnerName: '',
+                vendorRating: 0,
+                discountPercentage: wishlistItem.discountPercentage,
+                createdAt: wishlistItem.addedAt,
+              );
+
+              return ProductCard(product: product);
             },
           ),
         );

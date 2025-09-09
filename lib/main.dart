@@ -5,15 +5,28 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'CommonComponents/CommonUtils/app_sizes.dart';
 import 'CommonComponents/controllers/global_controller.dart';
-import 'controllers/address_controller.dart';
-import 'controllers/cart_controller.dart';
+
+
 import 'controllers/coupon_controller.dart';
 import 'controllers/orders_controller.dart';
 import 'controllers/integrated_order_controller.dart';
 import 'controllers/user_controller.dart';
 import 'controllers/wallet_controller.dart';
-import 'controllers/wishlist_controller.dart';
+
 import 'data/api/api_client.dart';
+import 'data/api/services/user_api_service.dart';
+import 'data/api/services/vendor_api_service.dart';
+import 'data/api/services/rider_api_service.dart';
+import 'data/api/services/profile_api_service.dart';
+
+import 'modules/vendor/repositories/vendor_repository.dart';
+import 'modules/rider/repositories/rider_repository.dart';
+import 'modules/address/repositories/address_repository.dart';
+import 'modules/category/repositories/category_repository.dart';
+import 'modules/product/repositories/product_repository.dart';
+import 'modules/wishlist/repositories/wishlist_repository.dart';
+import 'modules/cart/repositories/cart_repository.dart';
+import 'modules/order/repositories/order_repository.dart';
 import 'services/location_service.dart';
 import 'services/notification_service.dart';
 import 'themes/app_theme.dart';
@@ -25,19 +38,34 @@ Future<void> main() async {
   await Get.putAsync(() => NotificationService().init());
   await Get.putAsync(() => LocationService().init());
   
+  // Initialize API client and repositories
+  Get.put(ApiClient());
+  //Get.put(UserRepository());
+  Get.put(VendorRepository());
+  Get.put(RiderRepository());
+  Get.put(AddressRepository());
+  Get.put(CategoryRepository());
+  Get.put(ProductRepository());
+  Get.put(WishlistRepository());
+  Get.put(CartRepository());
+  Get.put(OrderRepository());
+  
   // Initialize global controllers
   Get.put(GlobalController());
-  Get.put(ApiClient());
+  Get.put(UserApiService());
+  Get.put(VendorApiService());
+  Get.put(RiderApiService());
+  Get.put(ProfileApiService());
   
   // Initialize feature controllers
-  Get.put(CartController());
+
   Get.put(CouponController());
   Get.put(OrdersController());
   Get.put(IntegratedOrderController());
   Get.put(UserController());
-  Get.put(AddressController());
+
   Get.put(WalletController());
-  Get.put(WishlistController());
+
 
   // Lock to portrait only
   await SystemChrome.setPreferredOrientations([

@@ -1,8 +1,11 @@
 import 'package:get/get.dart';
 
 import '../data/api/api_client.dart';
+import '../data/api/services/user_api_service.dart';
+import '../data/api/services/vendor_api_service.dart';
+import '../data/api/services/rider_api_service.dart';
 import '../data/repositories/auth_repository.dart';
-import '../data/repositories/vendor_repository.dart';
+import '../modules/vendor/repositories/vendor_repository.dart';
 import '../data/repositories/rider_repository.dart';
 import '../models/cart_item_model.dart';
 import '../modules/auth/login_controller.dart';
@@ -12,7 +15,9 @@ import '../modules/splash/splash_screen.dart';
 import '../modules/bottom_navigation_bar/bottom_navigation_bar.dart';
 import '../modules/orders/views/order_success_screen.dart';
 import '../modules/vendor/controllers/vendor_controller.dart';
+import '../modules/auth/user_signup_screen.dart';
 import '../modules/auth/vendor_signup_screen.dart';
+import '../modules/vendor/repositories/vendor_repository.dart';
 import '../modules/vendor/views/vendor_dashboard.dart';
 import '../modules/vendor/views/vendor_products.dart';
 import '../modules/vendor/views/vendor_orders_screen.dart';
@@ -44,8 +49,11 @@ class AppPages {
       name: Routes.login,
       page: () => LoginView(),
       binding: BindingsBuilder(() {
-        Get.lazyPut(() => ApiClient());
-        Get.lazyPut(() => AuthRepository());
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<UserApiService>()) Get.lazyPut(() => UserApiService());
+        if (!Get.isRegistered<VendorApiService>()) Get.lazyPut(() => VendorApiService());
+        if (!Get.isRegistered<RiderApiService>()) Get.lazyPut(() => RiderApiService());
+        if (!Get.isRegistered<AuthRepository>()) Get.lazyPut(() => AuthRepository());
         Get.lazyPut(() => LoginController());
       }),
     ),
@@ -54,16 +62,36 @@ class AppPages {
       page: () => LoginView(),
     ),
     GetPage(
+      name: Routes.home,
+      page: () => BottomNavigationView(),
+    ),
+    GetPage(
       name: Routes.bottomBar,
       page: () => BottomNavigationView(),
     ),
     GetPage(
+      name: Routes.userSignup,
+      page: () => const UserSignupScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<UserApiService>()) Get.lazyPut(() => UserApiService());
+      }),
+    ),
+    GetPage(
       name: Routes.vendorSignup,
       page: () => const VendorSignupScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<VendorApiService>()) Get.lazyPut(() => VendorApiService());
+      }),
     ),
     GetPage(
       name: Routes.riderSignup,
-      page: () => RiderSignupScreen(),
+      page: () => const RiderSignupScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<RiderApiService>()) Get.lazyPut(() => RiderApiService());
+      }),
     ),
     GetPage(
       name: Routes.vendorDashboard,

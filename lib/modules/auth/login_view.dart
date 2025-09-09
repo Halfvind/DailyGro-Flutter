@@ -22,10 +22,10 @@ class LoginView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Lottie.asset(
+              /*Lottie.asset(
                 'assets/lottie/login.json',
                 height: 220,
-              ),
+              ),*/
               const SizedBox(height: 20),
               Text(
                 "Welcome Back 👋",
@@ -62,6 +62,7 @@ class LoginView extends StatelessWidget {
                 onPressed: controller.onLogin,
               )),
               const SizedBox(height: 20),
+              if (controller.selectedRole == 'user') _buildUserSignupOption(),
               if (controller.selectedRole == 'vendor') _buildVendorSignupOption(),
               if (controller.selectedRole == 'rider') _buildRiderSignupOption(),
               const SizedBox(height: 20),
@@ -69,6 +70,15 @@ class LoginView extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+  
+  Widget _buildUserSignupOption() {
+    return Center(
+      child: TextButton(
+        onPressed: () => Get.toNamed('/user/signup'),
+        child: const Text('New user? Create account here'),
       ),
     );
   }

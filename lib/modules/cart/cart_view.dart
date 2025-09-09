@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../controllers/cart_controller.dart';
+import '../cart/controllers/cart_controller.dart';
 import '../../controllers/coupon_controller.dart';
 import '../orders/widgets/coupon_bottom_sheet.dart';
 import 'order_summary_view.dart';
@@ -84,11 +84,23 @@ class CartView extends GetView<CartController> {
                             color: Colors.grey[100],
                             borderRadius: BorderRadius.circular(AppSizes.radius(8)),
                           ),
-                          child: Icon(
-                            Icons.image,
-                            size: AppSizes.fontXXXL,
-                            color: Colors.grey[400],
-                          ),
+                          child: cartItem.image != null
+                              ? Image.network(
+                                  'http://localhost/dailygro/uploads/${cartItem.image}',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.image,
+                                      size: AppSizes.fontXXXL,
+                                      color: Colors.grey[400],
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  Icons.image,
+                                  size: AppSizes.fontXXXL,
+                                  color: Colors.grey[400],
+                                ),
                         ),
                         
                         SizedBox(width: AppSizes.width(12)),
@@ -98,7 +110,7 @@ class CartView extends GetView<CartController> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                cartItem.product.name ?? '',
+                                cartItem.name,
                                 style: TextStyle(
                                   fontSize: AppSizes.fontL,
                                   fontWeight: FontWeight.w600,
@@ -106,59 +118,27 @@ class CartView extends GetView<CartController> {
                               ),
                               SizedBox(height: AppSizes.height(4)),
                               
-                              SizedBox(
-                                height: AppSizes.height(32),
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: cartItem.product.variants.length,
-                                  itemBuilder: (context, variantIndex) {
-                                    return Obx(() {
-                                      final isSelected = cartItem.selectedVariantIndex.value == variantIndex;
-                                      return GestureDetector(
-                                        onTap: () => controller.updateItemVariant(index, variantIndex),
-                                        child: Container(
-                                          margin: EdgeInsets.only(right: AppSizes.width(8)),
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: AppSizes.width(8),
-                                            vertical: AppSizes.height(4),
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isSelected ? Colors.green : Colors.grey[200],
-                                            borderRadius: BorderRadius.circular(AppSizes.radius(12)),
-                                            border: Border.all(
-                                              color: isSelected ? Colors.green : Colors.grey[300]!,
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              cartItem.product.variants[variantIndex].unit,
-                                              style: TextStyle(
-                                                fontSize: AppSizes.fontXS,
-                                                color: isSelected ? Colors.white : Colors.grey[700],
-                                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    });
-                                  },
+                              Text(
+                                '${cartItem.weight} ${cartItem.unit}',
+                                style: TextStyle(
+                                  fontSize: AppSizes.fontS,
+                                  color: Colors.grey[600],
                                 ),
                               ),
                               
-                              SizedBox(height: AppSizes.height(4)),
+                              SizedBox(height: AppSizes.height(8)),
                               
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Obx(() => Text(
-                                    '₹${cartItem.totalPrice.toStringAsFixed(0)}',
+                                  Text(
+                                    '₹${cartItem.price.toStringAsFixed(0)}',
                                     style: TextStyle(
                                       fontSize: AppSizes.fontL,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
                                     ),
-                                  )),
+                                  ),
                                   
                                   Container(
                                     decoration: BoxDecoration(
@@ -169,7 +149,13 @@ class CartView extends GetView<CartController> {
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         GestureDetector(
-                                          onTap: () => controller.updateItemQuantity(index, cartItem.quantity.value - 1),
+                                          onTap: () {
+                                            if (cartItem.quantity > 1) {
+                                              controller.updateCartItem(cartItem.cartId, cartItem.quantity - 1);
+                                            } else {
+                                              controller.removeFromCart(cartItem.cartId);
+                                            }
+                                          },
                                           child: Container(
                                             padding: EdgeInsets.all(AppSizes.width(6)),
                                             child: Icon(
@@ -179,22 +165,24 @@ class CartView extends GetView<CartController> {
                                             ),
                                           ),
                                         ),
-                                        Obx(() => Container(
+                                        Container(
                                           padding: EdgeInsets.symmetric(
                                             horizontal: AppSizes.width(12),
                                             vertical: AppSizes.height(4),
                                           ),
                                           child: Text(
-                                            cartItem.quantity.value.toString(),
+                                            cartItem.quantity.toString(),
                                             style: TextStyle(
                                               fontSize: AppSizes.fontM,
                                               color: Colors.white,
                                               fontWeight: FontWeight.w600,
                                             ),
                                           ),
-                                        )),
+                                        ),
                                         GestureDetector(
-                                          onTap: () => controller.updateItemQuantity(index, cartItem.quantity.value + 1),
+                                          onTap: () {
+                                            controller.updateCartItem(cartItem.cartId, cartItem.quantity + 1);
+                                          },
                                           child: Container(
                                             padding: EdgeInsets.all(AppSizes.width(6)),
                                             child: Icon(
@@ -234,53 +222,6 @@ class CartView extends GetView<CartController> {
               ),
               child: Column(
                 children: [
-                  // Apply Coupon Section
-                  GestureDetector(
-                    onTap: () {
-                      Get.bottomSheet(
-                        CouponBottomSheet(),
-                        isScrollControlled: true,
-                      );
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(AppSizes.width(12)),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                        border: Border.all(color: Colors.green),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.local_offer,
-                            color: Colors.green,
-                            size: AppSizes.fontXL,
-                          ),
-                          SizedBox(width: AppSizes.width(8)),
-                          Expanded(
-                            child: Obx(() => Text(
-                              couponController.selectedCoupon.value != null
-                                  ? 'Coupon Applied: ${couponController.selectedCoupon.value!.code}'
-                                  : 'Apply Coupon',
-                              style: TextStyle(
-                                fontSize: AppSizes.fontM,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green,
-                              ),
-                            )),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.green,
-                            size: AppSizes.fontL,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(height: AppSizes.height(16)),
-                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -291,97 +232,16 @@ class CartView extends GetView<CartController> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Obx(() => Text(
-                        controller.totalItems.toString(),
+                      Text(
+                        controller.itemCount.toString(),
                         style: TextStyle(
                           fontSize: AppSizes.fontL,
                           fontWeight: FontWeight.w600,
-                        ),
-                      )),
-                    ],
-                  ),
-                  
-                  SizedBox(height: AppSizes.height(8)),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Subtotal:',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontL,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Obx(() => Text(
-                        '₹${controller.totalAmount.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontL,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      )),
                     ],
                   ),
                   
-                  SizedBox(height: AppSizes.height(8)),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Delivery Fee:',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontL,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Obx(() => Text(
-                        controller.totalAmount >= 299 ? 'FREE' : '₹49',
-                        style: TextStyle(
-                          fontSize: AppSizes.fontL,
-                          fontWeight: FontWeight.w600,
-                          color: controller.totalAmount >= 299 ? Colors.green : Colors.black,
-                        ),
-                      )),
-                    ],
-                  ),
-                  
-                  // Discount Row
-                  Obx(() {
-                    final discount = couponController.getDiscountAmount(controller.totalAmount);
-                    if (discount > 0) {
-                      return Column(
-                        children: [
-                          SizedBox(height: AppSizes.height(8)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Discount:',
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontL,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.green,
-                                ),
-                              ),
-                              Text(
-                                '-₹${discount.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: AppSizes.fontL,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
-                    return SizedBox.shrink();
-                  }),
-                  
-                  SizedBox(height: AppSizes.height(8)),
-                  Divider(),
                   SizedBox(height: AppSizes.height(8)),
                   
                   Row(
@@ -394,19 +254,14 @@ class CartView extends GetView<CartController> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Obx(() {
-                        final deliveryFee = controller.totalAmount >= 299 ? 0 : 49;
-                        final discount = couponController.getDiscountAmount(controller.totalAmount);
-                        final finalAmount = controller.totalAmount + deliveryFee - discount;
-                        return Text(
-                          '₹${finalAmount.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: AppSizes.fontL,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        );
-                      }),
+                      Text(
+                        '₹${controller.totalAmount.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: AppSizes.fontL,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
                     ],
                   ),
                   
@@ -425,7 +280,7 @@ class CartView extends GetView<CartController> {
                         ),
                       ),
                       child: Text(
-                        'ORDER SUMMARY',
+                        'PROCEED TO CHECKOUT',
                         style: TextStyle(
                           fontSize: AppSizes.fontL,
                           fontWeight: FontWeight.bold,

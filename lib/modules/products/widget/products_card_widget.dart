@@ -9,6 +9,7 @@ class CommonProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      return ProductCard(product: product);
+    return SizedBox() ;
+    //  return ProductCard(product: product);
   }
 }

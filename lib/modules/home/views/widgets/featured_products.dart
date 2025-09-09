@@ -6,15 +6,18 @@ import '../../../../../CommonComponents/CommonWidgets/product_card.dart';
 import '../../../../themes/app_colors.dart';
 import '../../../product_detail/product_detail_view.dart';
 import '../../controller/home_controller.dart';
+import '../../../product/controllers/product_controller.dart';
 import '../featured_products_view.dart';
 
-class FeaturedProducts extends GetView<HomeController> {
+class FeaturedProducts extends StatelessWidget {
   const FeaturedProducts({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final productController = Get.find<ProductController>();
+    
     return Obx(() {
-      final products = controller.featuredProducts;
+      final products = productController.featuredProducts;
       if (products.isEmpty) return const SizedBox.shrink();
 
       return Column(
@@ -65,11 +68,11 @@ class FeaturedProducts extends GetView<HomeController> {
               itemBuilder: (context, index) {
                 final product = products[index];
                 return GestureDetector(
-                  onTap: () => Get.to(() => ProductDetailView(product: products[index],),
+                 /* onTap: () => Get.to(() => ProductDetailView(product: products[index],),
                       arguments:{
                         "product": products[index],
                         "categoryId": products[index].categoryId,
-                      }),
+                      }),*/
                   child: Container(
                     width: AppSizes.width(190),
                     margin: EdgeInsets.only(right: AppSizes.width(12)),

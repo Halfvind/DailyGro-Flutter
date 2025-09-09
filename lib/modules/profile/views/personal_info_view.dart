@@ -1,171 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../controllers/user_controller.dart';
-import '../../../models/user_model.dart';
+import '../../../CommonComponents/CommonWidgets/common_material_button.dart';
+import '../../../CommonComponents/CommonWidgets/common_textfield.dart';
+import '../../../themes/app_colors.dart';
+import '../../user/repositories/user_repository.dart';
+import '../controllers/profile_controller.dart';
 
-class PersonalInfoView extends GetView<UserController> {
+class PersonalInfoView extends StatelessWidget {
   const PersonalInfoView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final phoneController = TextEditingController();
-    final genderController = RxString('');
-    final selectedDate = Rxn<DateTime>();
-
-    // Initialize with current user data
-    nameController.text = controller.user.value.name;
-    emailController.text = controller.user.value.email;
-    phoneController.text = controller.user.value.phone;
-    genderController.value = controller.user.value.gender ?? '';
-    selectedDate.value = controller.user.value.dateOfBirth;
-
+    final controller = Get.put(ProfileController(), permanent: false);
+   // final controller = Get.put(UserRepository());
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Personal Information'),
-        backgroundColor: Colors.green,
+        title: const Text('Personal Information'),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(AppSizes.width(16)),
-        child: Column(
-          children: [
-            _buildTextField(
-              controller: nameController,
-              label: 'Full Name',
-              icon: Icons.person_outline,
-            ),
-            SizedBox(height: AppSizes.height(16)),
-            _buildTextField(
-              controller: emailController,
-              label: 'Email',
-              icon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            SizedBox(height: AppSizes.height(16)),
-            _buildTextField(
-              controller: phoneController,
-              label: 'Phone Number',
-              icon: Icons.phone_outlined,
-              keyboardType: TextInputType.phone,
-            ),
-            SizedBox(height: AppSizes.height(16)),
-            
-            // Date of Birth
-            Obx(() => GestureDetector(
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate.value ?? DateTime.now(),
-                  firstDate: DateTime(1950),
-                  lastDate: DateTime.now(),
-                );
-                if (date != null) selectedDate.value = date;
-              },
-              child: Container(
-                padding: EdgeInsets.all(AppSizes.width(16)),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today_outlined, color: Colors.grey[600]),
-                    SizedBox(width: AppSizes.width(12)),
-                    Text(
-                      selectedDate.value != null
-                          ? '${selectedDate.value!.day}/${selectedDate.value!.month}/${selectedDate.value!.year}'
-                          : 'Date of Birth',
-                      style: TextStyle(
-                        fontSize: AppSizes.fontL,
-                        color: selectedDate.value != null ? Colors.black : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final user = controller.userProfile.value;
+        if (user == null) {
+          return const Center(child: Text('No profile data available'));
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.person, size: 80, color: AppColors.primary),
+              const SizedBox(height: 24),
+              const Text(
+                'Profile Information',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-            )),
-            
-            SizedBox(height: AppSizes.height(16)),
-            
-            // Gender Selection
-            Obx(() => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Gender',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontL,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: AppSizes.height(8)),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text('Male'),
-                        value: 'Male',
-                        groupValue: genderController.value,
-                        onChanged: (value) => genderController.value = value!,
-                        activeColor: Colors.green,
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text('Female'),
-                        value: 'Female',
-                        groupValue: genderController.value,
-                        onChanged: (value) => genderController.value = value!,
-                        activeColor: Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            )),
-            
-            SizedBox(height: AppSizes.height(32)),
-            
-            // Save Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final updatedUser = UserModel(
-                    name: nameController.text,
-                    email: emailController.text,
-                    phone: phoneController.text,
-                    dateOfBirth: selectedDate.value,
-                    gender: genderController.value.isEmpty ? null : genderController.value,
-                  );
-                  
-                  controller.updateUser(updatedUser);
-                  Get.back();
-                  Get.snackbar(
-                    'Success',
-                    'Personal information updated successfully',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: AppSizes.height(16)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-                  ),
-                ),
-                child: Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontL,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const SizedBox(height: 32),
+              
+              _buildInfoCard('Name', user.name),
+              const SizedBox(height: 16),
+              
+              _buildInfoCard('Email', user.email),
+              const SizedBox(height: 16),
+              
+              _buildInfoCard('Phone', user.phone),
+              const SizedBox(height: 16),
+              
+              _buildInfoCard('Role', user.role.toUpperCase()),
+              const SizedBox(height: 16),
+              
+              if (user.address != null)
+                _buildInfoCard('Address', user.address!),
+              const SizedBox(height: 16),
+              
+              if (user.createdAt != null)
+                _buildInfoCard('Member Since', 
+                  '${user.createdAt!.day}/${user.createdAt!.month}/${user.createdAt!.year}'),
+              
+              const SizedBox(height: 32),
+              
+              CommonButton(
+                text: 'Edit Profile',
+                onPressed: () => _showEditDialog(context, controller, user),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              CommonButton(
+                text: 'Refresh Profile',
+                onPressed: controller.loadUserProfile,
+                backgroundColor: Colors.grey[600],
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -174,25 +114,56 @@ class PersonalInfoView extends GetView<UserController> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.grey[600]),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radius(8)),
+  void _showEditDialog(BuildContext context, ProfileController controller, user) {
+    final nameController = TextEditingController(text: user.name);
+    final phoneController = TextEditingController(text: user.phone);
+    final addressController = TextEditingController(text: user.address ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CommonTextField(
+              controller: nameController,
+              hintText: 'Name',
+              prefixIcon: const Icon(Icons.person),
+            ),
+            const SizedBox(height: 16),
+            CommonTextField(
+              controller: phoneController,
+              hintText: 'Phone',
+              prefixIcon: const Icon(Icons.phone),
+            ),
+            const SizedBox(height: 16),
+            CommonTextField(
+              controller: addressController,
+              hintText: 'Address',
+              prefixIcon: const Icon(Icons.location_on),
+              maxLines: 2,
+            ),
+          ],
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radius(8)),
-          borderSide: BorderSide(color: Colors.green),
-        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              controller.updateProfile({
+                'name': nameController.text,
+                'phone': phoneController.text,
+                'address': addressController.text,
+                'role':user.role
+              });
+              Get.back();
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
     );
   }

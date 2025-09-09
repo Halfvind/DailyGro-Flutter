@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/vendor_controller.dart';
+import '../../category/controllers/category_controller.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
 import '../../../themes/app_colors.dart';
 import 'vendor_stock_management.dart';
@@ -15,6 +16,7 @@ class VendorDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<VendorController>();
+
     
     return Scaffold(
       appBar: AppBar(

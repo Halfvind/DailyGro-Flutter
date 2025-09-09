@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../controllers/address_controller.dart';
 import '../../../models/address_model.dart';
+import '../../address/controllers/address_controller.dart';
 
 class AddAddressView extends GetView<AddressController> {
   final AddressModel? address;
@@ -15,10 +15,10 @@ class AddAddressView extends GetView<AddressController> {
     final isEditing = address != null;
     
     final titleController = TextEditingController(text: address?.title ?? '');
-    final nameController = TextEditingController(text: address?.fullName ?? '');
+    final nameController = TextEditingController(text: address?.name ?? '');
     final phoneController = TextEditingController(text: address?.phone ?? '');
-    final address1Controller = TextEditingController(text: address?.addressLine1 ?? '');
-    final address2Controller = TextEditingController(text: address?.addressLine2 ?? '');
+    final address1Controller = TextEditingController(text: address?.addressLine ?? '');
+    final address2Controller = TextEditingController(text: address?.city ?? '');
     final cityController = TextEditingController(text: address?.city ?? '');
     final stateController = TextEditingController(text: address?.state ?? '');
     final pincodeController = TextEditingController(text: address?.pincode ?? '');
@@ -119,22 +119,20 @@ class AddAddressView extends GetView<AddressController> {
                     pincodeController,
                   ])) {
                     final newAddress = AddressModel(
-                      id: address?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
                       title: titleController.text,
-                      fullName: nameController.text,
                       phone: phoneController.text,
-                      addressLine1: address1Controller.text,
-                      addressLine2: address2Controller.text,
                       city: cityController.text,
                       state: stateController.text,
                       pincode: pincodeController.text,
-                      isDefault: isDefaultController.value,
+                      isDefault: true,
+                      addressId: 1, userId: 1, name: '', addressLine: '',
+                      addressType: '', createdAt: '',
                     );
 
                     if (isEditing && index != null) {
-                      controller.updateAddress(index!, newAddress);
+                      //controller.updateAddress(index!, newAddress);
                     } else {
-                      controller.addAddress(newAddress);
+                      //controller.addAddress(newAddress);
                     }
 
                     Get.back();

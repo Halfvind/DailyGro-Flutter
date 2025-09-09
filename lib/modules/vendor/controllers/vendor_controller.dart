@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
-import '../../../data/repositories/vendor_repository.dart';
+import '../repositories/vendor_repository.dart';
 import '../models/vendor_model.dart';
 import '../models/product_model.dart';
 import '../../../controllers/integrated_order_controller.dart';
+import '../repositories/vendor_repository.dart';
 
 class VendorController extends GetxController {
   final VendorRepository _repository = Get.find<VendorRepository>();
@@ -16,17 +17,22 @@ class VendorController extends GetxController {
   // Orders from integrated system
   List<dynamic> get orders {
     if (_vendor.value == null) return [];
-    final integratedController = Get.find<IntegratedOrderController>();
-    return integratedController.getVendorOrders(_vendor.value!.id)
-        .map((order) => {
-          'id': order.id,
-          'orderNumber': order.orderNumber,
-          'customerName': 'Customer',
-          'items': order.items,
-          'totalAmount': order.totalAmount,
-          'status': order.status,
-          'orderDate': order.orderDate,
-        }).toList();
+    try {
+      final integratedController = Get.find<IntegratedOrderController>();
+      return integratedController.getVendorOrders(_vendor.value!.id)
+          .map((order) => {
+            'id': order.id,
+            'orderNumber': order.orderNumber,
+            'customerName': 'Customer',
+            'items': order.items,
+            'totalAmount': order.totalAmount,
+            'status': order.status,
+            'orderDate': order.orderDate,
+          }).toList();
+    } catch (e) {
+      print('Error getting orders: $e');
+      return [];
+    }
   }
   
   VendorModel? get vendor => _vendor.value;
@@ -47,23 +53,21 @@ class VendorController extends GetxController {
     _isLoading.value = true;
     try {
       final data = await _repository.getDashboardData();
-      if (data != null) {
-        _vendor.value = VendorModel.fromJson(data['vendor']);
-      } else {
-        // Load dummy data for new vendors
-        _vendor.value = VendorModel(
-          id: '1',
-          name: 'Fresh Mart Store',
-          email: 'vendor@dailygro.com',
-          phone: '+1 234 567 8900',
-          businessName: 'Fresh Mart Store',
-          address: '123 Market Street, City',
-          isActive: true,
-          rating: 4.8,
-          totalOrders: 245,
-          totalEarnings: 2450.75,
-        );
-      }
+
+      print('CHECKING THE data OF DASHBOARD IN VENDOR CONTROLLER  $data');
+      // Always load dummy data for now
+      _vendor.value = VendorModel(
+        id: '1',
+        name: 'Fresh Mart Store',
+        email: 'vendor@dailygro.com',
+        phone: '+1 234 567 8900',
+        businessName: 'Fresh Mart Store',
+        address: '123 Market Street, City',
+        isActive: true,
+        rating: 4.8,
+        totalOrders: 245,
+        totalEarnings: 2450.75,
+      );
     } finally {
       _isLoading.value = false;
     }
@@ -72,8 +76,10 @@ class VendorController extends GetxController {
   Future<void> loadProducts() async {
     try {
       final data = await _repository.getProducts();
+
+      print('WE ARE LOADING THE PRODUCTS OF VENDOR $data');
       if (data != null) {
-        _products.value = data.map((json) => ProductModel.fromJson(json)).toList();
+      //  _products.value = data.map((json) => ProductModel.fromJson(json)).toList();
       } else {
         // Load dummy products for new vendors
         _products.value = [
@@ -207,14 +213,22 @@ class VendorController extends GetxController {
   // Order Management
   void acceptOrder(String orderId) {
     if (_vendor.value == null) return;
-    final integratedController = Get.find<IntegratedOrderController>();
-    integratedController.vendorAcceptOrder(orderId, _vendor.value!.id);
+    try {
+      final integratedController = Get.find<IntegratedOrderController>();
+      integratedController.vendorAcceptOrder(orderId, _vendor.value!.id);
+    } catch (e) {
+      print('Error accepting order: $e');
+    }
   }
 
   void rejectOrder(String orderId) {
     if (_vendor.value == null) return;
-    final integratedController = Get.find<IntegratedOrderController>();
-    integratedController.vendorRejectOrder(orderId, _vendor.value!.id);
+    try {
+      final integratedController = Get.find<IntegratedOrderController>();
+      integratedController.vendorRejectOrder(orderId, _vendor.value!.id);
+    } catch (e) {
+      print('Error rejecting order: $e');
+    }
   }
   
   void loadDummyTransactions() {

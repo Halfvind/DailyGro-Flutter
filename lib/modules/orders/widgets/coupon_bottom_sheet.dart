@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../controllers/coupon_controller.dart';
-import '../../../controllers/cart_controller.dart';
+import '../../cart/controllers/cart_controller.dart';
 
 class CouponBottomSheet extends StatelessWidget {
   const CouponBottomSheet({super.key});
@@ -43,7 +43,7 @@ class CouponBottomSheet extends StatelessWidget {
           
           SizedBox(height: AppSizes.height(16)),
           
-          Obx(() {
+        /*  Obx(() {
             final validCoupons = couponController.getValidCoupons(cartController.totalAmount);
             
             if (validCoupons.isEmpty) {
@@ -174,7 +174,7 @@ class CouponBottomSheet extends StatelessWidget {
                 );
               },
             );
-          }),
+          }),*/
         ],
       ),
     );

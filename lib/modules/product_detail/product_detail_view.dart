@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../CommonComponents/CommonWidgets/common_material_button.dart';
-import '../../controllers/cart_controller.dart';
-import '../../controllers/wishlist_controller.dart';
+import '../cart/controllers/cart_controller.dart';
+import '../wishlist/controllers/wishlist_controller.dart';
 import '../../themes/app_colors.dart';
 import 'product_detail_controller.dart';
 import '../../modules/home/models/home_product_model.dart';
@@ -245,10 +245,10 @@ class ProductDetailView extends StatelessWidget {
 
     if (quantity == 0) {
       return GestureDetector(
-        onTap: () => cartController.addToCart(
+       /* onTap: () => cartController.addToCart(
           product,
           variantIndex: product.selectedVariantIndex.value,
-        ),
+        ),*/
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: AppSizes.width(16),
@@ -298,7 +298,7 @@ class ProductDetailView extends StatelessWidget {
           children: [
             _qtyButton(Icons.remove, () {
               final cartIndex = cartController.cartItems.indexWhere((item) =>
-              item.product.id == product.id &&
+              item.product.productId == product.id &&
                   item.selectedVariantIndex.value ==
                       product.selectedVariantIndex.value);
               if (cartIndex != -1) {
@@ -321,7 +321,7 @@ class ProductDetailView extends StatelessWidget {
             ),
             _qtyButton(Icons.add, () {
               final cartIndex = cartController.cartItems.indexWhere((item) =>
-              item.product.id == product.id &&
+              item.product.productId == product.id &&
                   item.selectedVariantIndex.value ==
                       product.selectedVariantIndex.value);
               if (cartIndex != -1) {
@@ -762,10 +762,11 @@ class ProductDetailView extends StatelessWidget {
 
     if (quantity == 0) {
       return GestureDetector(
-        onTap: () => cartController.addToCart(
-          product,
+       /* onTap: () => cartController.addToCart(
+          product.id,
+
           variantIndex: product.selectedVariantIndex.value,
-        ),
+        ),*/
         child: Container(
           padding: EdgeInsets.symmetric(
             horizontal: AppSizes.width(12),
@@ -800,7 +801,7 @@ class ProductDetailView extends StatelessWidget {
           children: [
             _qtyButton(Icons.remove, () {
               final cartIndex = cartController.cartItems.indexWhere((item) =>
-              item.product.id == product.id &&
+              item.product.productId == product.id &&
                   item.selectedVariantIndex.value ==
                       product.selectedVariantIndex.value);
               if (cartIndex != -1) {
@@ -823,7 +824,7 @@ class ProductDetailView extends StatelessWidget {
             ),
             _qtyButton(Icons.add, () {
               final cartIndex = cartController.cartItems.indexWhere((item) =>
-              item.product.id == product.id &&
+              item.product.productId == product.id &&
                   item.selectedVariantIndex.value ==
                       product.selectedVariantIndex.value);
               if (cartIndex != -1) {

@@ -1,0 +1,39 @@
+Options +FollowSymLinks
+RewriteEngine On
+RewriteBase /dailygro/
+
+# Auth endpoints
+RewriteRule ^api/login$ login.php [L]
+RewriteRule ^api/logout$ auth/logout.php [L]
+RewriteRule ^api/user_registration$ user_registration.php [L]
+
+# User profile endpoints
+RewriteRule ^api/user/get_user_profile$ user/get_user_profile.php [L]
+RewriteRule ^api/users/get_user_profile$ user/get_user_profile.php [L]
+
+# Vendor profile endpoints
+RewriteRule ^api/vendor/get_vendor_profile$ vendor/get_vendor_profile.php [L]
+
+# Rider profile endpoints
+RewriteRule ^api/rider/get_rider_profile$ rider/get_rider_profile.php [L]
+
+# Address endpoints
+RewriteRule ^api/users/user_address$ users/user_address.php [L]
+
+# Categories endpoints
+RewriteRule ^api/categories$ categories.php [L]
+
+# Products endpoints
+RewriteRule ^api/products$ products.php [L]
+
+# Cart endpoints
+RewriteRule ^api/cart$ cart.php [L]
+
+# Orders endpoints
+RewriteRule ^api/orders$ orders.php [L]
+
+# Wishlist endpoints
+RewriteRule ^api/wishlist$ wishlist.php [L]
+
+# Order Tracking endpoints
+RewriteRule ^api/order_tracking$ order_tracking.php [L]

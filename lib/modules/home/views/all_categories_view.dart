@@ -35,7 +35,7 @@ class AllCategoriesView extends StatelessWidget {
             itemBuilder: (context, index) {
               final category = categories[index];
               return GestureDetector(
-                onTap: () => Get.to(() => ProductsListView(category: category)),
+               // onTap: () => Get.to(() => ProductsListView(category: category)),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,

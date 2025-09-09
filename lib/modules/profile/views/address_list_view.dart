@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../controllers/address_controller.dart';
+import '../../address/controllers/address_controller.dart';
+import '../../../models/address_model.dart';
 import 'add_address_view.dart';
 
-class AddressListView extends GetView<AddressController> {
+class AddressListView extends StatelessWidget {
   const AddressListView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(AddressController(), permanent: false);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Delivery Addresses'),
+        title: const Text('Delivery Addresses'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            onPressed: () => Get.to(() => AddAddressView()),
-            icon: Icon(Icons.add),
+            onPressed: () => Get.to(() => const AddAddressView()),
+            icon: const Icon(Icons.add),
           ),
         ],
       ),
       body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         if (controller.addresses.isEmpty) {
           return Center(
             child: Column(
@@ -29,25 +36,25 @@ class AddressListView extends GetView<AddressController> {
               children: [
                 Icon(
                   Icons.location_off_outlined,
-                  size: AppSizes.font(80),
+                  size: 80,
                   color: Colors.grey[400],
                 ),
-                SizedBox(height: AppSizes.height(16)),
+                const SizedBox(height: 16),
                 Text(
                   'No addresses added',
                   style: TextStyle(
-                    fontSize: AppSizes.fontL,
+                    fontSize: 18,
                     color: Colors.grey[600],
                   ),
                 ),
-                SizedBox(height: AppSizes.height(16)),
+                const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => Get.to(() => AddAddressView()),
+                  onPressed: () => Get.to(() => const AddAddressView()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  child: Text('Add Address'),
+                  child: const Text('Add Address'),
                 ),
               ],
             ),
@@ -55,23 +62,23 @@ class AddressListView extends GetView<AddressController> {
         }
 
         return ListView.builder(
-          padding: EdgeInsets.all(AppSizes.width(16)),
+          padding: const EdgeInsets.all(16),
           itemCount: controller.addresses.length,
           itemBuilder: (context, index) {
             final address = controller.addresses[index];
             return Container(
-              margin: EdgeInsets.only(bottom: AppSizes.height(12)),
-              padding: EdgeInsets.all(AppSizes.width(16)),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(AppSizes.radius(12)),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: address.isDefault ? Colors.green : Colors.grey[300]!,
                   width: address.isDefault ? 2 : 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -84,57 +91,51 @@ class AddressListView extends GetView<AddressController> {
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSizes.width(8),
-                          vertical: AppSizes.height(4),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: address.isDefault ? Colors.green : Colors.grey[200],
-                          borderRadius: BorderRadius.circular(AppSizes.radius(4)),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          address.title,
+                          address.addressType.toUpperCase(),
                           style: TextStyle(
-                            fontSize: AppSizes.fontS,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: address.isDefault ? Colors.white : Colors.grey[700],
                           ),
                         ),
                       ),
                       if (address.isDefault) ...[
-                        SizedBox(width: AppSizes.width(8)),
+                        const SizedBox(width: 8),
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSizes.width(6),
-                            vertical: AppSizes.height(2),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.orange,
-                            borderRadius: BorderRadius.circular(AppSizes.radius(4)),
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(
+                          child: const Text(
                             'DEFAULT',
                             style: TextStyle(
-                              fontSize: AppSizes.fontXS,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
                         ),
                       ],
-                      Spacer(),
+                      const Spacer(),
                       PopupMenuButton(
                         itemBuilder: (context) => [
                           if (!address.isDefault)
-                            PopupMenuItem(
+                            const PopupMenuItem(
                               value: 'default',
                               child: Text('Set as Default'),
                             ),
-                          PopupMenuItem(
+                          const PopupMenuItem(
                             value: 'edit',
                             child: Text('Edit'),
                           ),
-                          PopupMenuItem(
+                          const PopupMenuItem(
                             value: 'delete',
                             child: Text('Delete'),
                           ),
@@ -142,47 +143,40 @@ class AddressListView extends GetView<AddressController> {
                         onSelected: (value) {
                           switch (value) {
                             case 'default':
-                              controller.setDefaultAddress(index);
+                              controller.setDefaultAddress(address.addressId);
                               break;
                             case 'edit':
-                              Get.to(() => AddAddressView(address: address, index: index));
+                              Get.to(() => AddAddressView(address: address));
                               break;
                             case 'delete':
-                              _showDeleteDialog(context, index);
+                              _showDeleteDialog(context, address.addressId);
                               break;
                           }
                         },
                       ),
                     ],
                   ),
-                  SizedBox(height: AppSizes.height(8)),
+                  const SizedBox(height: 8),
                   Text(
-                    address.fullName,
-                    style: TextStyle(
-                      fontSize: AppSizes.fontL,
+                    '${address.title} ${address.name}',
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: AppSizes.height(4)),
+                  const SizedBox(height: 4),
                   Text(
-                    '${address.addressLine1}${address.addressLine2.isNotEmpty ? ', ${address.addressLine2}' : ''}',
+                    address.fullAddress,
                     style: TextStyle(
-                      fontSize: AppSizes.fontM,
+                      fontSize: 14,
                       color: Colors.grey[700],
                     ),
                   ),
-                  Text(
-                    '${address.city}, ${address.state} - ${address.pincode}',
-                    style: TextStyle(
-                      fontSize: AppSizes.fontM,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  SizedBox(height: AppSizes.height(4)),
+                  const SizedBox(height: 4),
                   Text(
                     address.phone,
                     style: TextStyle(
-                      fontSize: AppSizes.fontM,
+                      fontSize: 14,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -193,35 +187,31 @@ class AddressListView extends GetView<AddressController> {
         );
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.to(() => AddAddressView()),
+        onPressed: () => Get.to(() => const AddAddressView()),
         backgroundColor: Colors.green,
-        child: Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  void _showDeleteDialog(BuildContext context, int index) {
+  void _showDeleteDialog(BuildContext context, int addressId) {
+    final controller = Get.find<AddressController>();
+    
     Get.dialog(
       AlertDialog(
-        title: Text('Delete Address'),
-        content: Text('Are you sure you want to delete this address?'),
+        title: const Text('Delete Address'),
+        content: const Text('Are you sure you want to delete this address?'),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              controller.deleteAddress(index);
+              controller.deleteAddress(addressId);
               Get.back();
-              Get.snackbar(
-                'Success',
-                'Address deleted successfully',
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-              );
             },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

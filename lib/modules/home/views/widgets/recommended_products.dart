@@ -5,16 +5,18 @@ import '../../../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../../../CommonComponents/CommonWidgets/product_card.dart';
 import '../../../../themes/app_colors.dart';
 import '../../../product_detail/product_detail_view.dart';
-import '../../controller/home_controller.dart';
+import '../../../product/controllers/product_controller.dart';
 import '../recommended_products_view.dart';
 
-class RecommendedProducts extends GetView<HomeController> {
+class RecommendedProducts extends StatelessWidget {
   const RecommendedProducts({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final productController = Get.find<ProductController>();
+    
     return Obx(() {
-      final products = controller.recommendedProducts;
+      final products = productController.recommendedProducts;
       if (products.isEmpty) return const SizedBox.shrink();
 
       return Column(
@@ -65,11 +67,11 @@ class RecommendedProducts extends GetView<HomeController> {
               itemBuilder: (context, index) {
                 final product = products[index];
                 return GestureDetector(
-                  onTap: () => Get.to(() => ProductDetailView(product: products[index],),
+                 /* onTap: () => Get.to(() => ProductDetailView(product: products[index],),
                       arguments:{
                         "product": products[index],
                         "categoryId": products[index].categoryId,
-                      }),
+                      }),*/
                   child: Container(
                     width: AppSizes.width(190),
                     margin: EdgeInsets.only(right: AppSizes.width(12)),
