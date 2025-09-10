@@ -23,9 +23,7 @@ class CartController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (_cartRepository != null && _globalController != null) {
-      loadCart();
-    }
+    // Don't auto-load cart - only load when CartView is opened
   }
 
   void _initializeServices() {
@@ -34,9 +32,6 @@ class CartController extends GetxController {
       _globalController = Get.find<GlobalController>();
     } catch (e) {
       print('Error initializing cart services: $e');
-      Future.delayed(Duration(milliseconds: 500), () {
-        _initializeServices();
-      });
     }
   }
 

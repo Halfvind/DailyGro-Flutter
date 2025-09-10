@@ -1,9 +1,8 @@
 import 'package:dailygro/modules/home/views/widgets/category_list.dart';
-import 'package:dailygro/modules/home/views/widgets/category_products.dart';
 import 'package:dailygro/modules/home/views/widgets/featured_products.dart';
 import 'package:dailygro/modules/home/views/widgets/recommended_products.dart';
 import 'package:dailygro/modules/home/views/widgets/offers_banner.dart';
-import 'package:dailygro/modules/home/views/widgets/quick_actions_enhanced.dart';
+// Removed quick_actions_enhanced import
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -58,7 +57,7 @@ class HomeView extends StatelessWidget {
                           AppSizes.vSpace(20),
                           const OffersBanner(),
                           AppSizes.vSpace(20),
-                          const QuickActionsEnhanced(),
+                          // Removed QuickActionsEnhanced widget
                         ],
                       ),
                     ),
@@ -71,6 +70,7 @@ class HomeView extends StatelessWidget {
                       children: [
                         AppSizes.vSpace(10),
                         _buildSectionTitle('Shop by Category', 'View All'),
+
                         AppSizes.vSpace(12),
                         const CategoryList(),
                         AppSizes.vSpace(30),

@@ -1,43 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../CommonComponents/CommonWidgets/product_card.dart';
+import '../../CommonComponents/CommonWidgets/api_product_card.dart';
 import '../../themes/app_colors.dart';
-import '../home/data/all_products_data.dart';
 import '../home/models/category_model.dart';
+import 'controllers/products_controller.dart';
 
 class ProductsListView extends StatelessWidget {
-  final CategoryModel? category;
+  final int? categoryId;
   
-  const ProductsListView({super.key, this.category});
+  const ProductsListView({super.key, this.categoryId});
 
   @override
   Widget build(BuildContext context) {
-    final products = category != null 
-        ? getProductsByCategory(category!.id!) 
-        : getProductsByCategory(1);
+    final productsController = Get.put(ProductsController());
+    
+    // Load products when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      productsController.loadProducts(categoryId: categoryId);
+    });
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(category?.name ?? 'Products'),
+        title: Text('Products'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: SizedBox(
-        height: AppSizes.height(290),
-        child: GridView.builder(
+      body: Obx(() {
+        if (productsController.isLoading.value) {
+          return Center(child: CircularProgressIndicator());
+        }
+        
+        if (productsController.products.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shopping_basket_outlined, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text('No products available'),
+              ],
+            ),
+          );
+        }
+        
+        return GridView.builder(
+          padding: EdgeInsets.all(AppSizes.width(8)),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 0.65,
-           // crossAxisSpacing: AppSizes.width(12),
-            //mainAxisSpacing: AppSizes.height(12),
           ),
-          itemCount: products.length,
+          itemCount: productsController.products.length,
           itemBuilder: (context, index) {
-            //return ProductCard(product: products[index]);
+            return ApiProductCard(product: productsController.products[index]);
           },
-        ),
-      ),
+        );
+      }),
     );
   }
 }

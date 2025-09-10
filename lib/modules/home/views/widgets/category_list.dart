@@ -41,7 +41,10 @@ class CategoryList extends GetView<HomeController> {
           final colorPair = colors[index % colors.length];
           
           return GestureDetector(
-           // onTap: () => Get.to(() => ProductsListView(category: category)),
+            onTap: () {
+             print('>>>>>>>>>categoryId>>>>>>>>>${displayCategories[index].categoryId}');
+              Get.to(() => ProductsListView(categoryId:displayCategories[index].categoryId ,));
+            },
             child: Container(
               decoration: BoxDecoration(
                 color: colorPair[0],

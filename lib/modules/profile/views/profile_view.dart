@@ -1,10 +1,11 @@
-import 'package:dailygro/modules/profile/views/wishlist_view.dart';
+import 'wishlist_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
 import '../../home/controller/home_controller.dart';
 import '../../home/views/widgets/wallet_summary.dart';
+import '../controllers/profile_controller.dart';
 import 'personal_info_view.dart';
 import 'address_list_view.dart';
 import 'help_support_view.dart';
@@ -15,6 +16,7 @@ class ProfileView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(ProfileController(), permanent: false);
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
@@ -48,7 +50,8 @@ class ProfileView extends GetView<HomeController> {
                     radius: AppSizes.width(35),
                     backgroundColor: Colors.green,
                     child: Text(
-                      controller.userName.value[0].toUpperCase(),
+                      controller.userProfile.value?.name[0].toUpperCase() ?? "",
+                      // controller.userName.value[0].toUpperCase(),
                       style: TextStyle(
                         fontSize: AppSizes.fontXXL,
                         fontWeight: FontWeight.bold,
@@ -61,21 +64,25 @@ class ProfileView extends GetView<HomeController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Obx(() => Text(
-                          controller.userName.value,
-                          style: TextStyle(
-                            fontSize: AppSizes.fontXL,
-                            fontWeight: FontWeight.bold,
+                        Obx(
+                          () => Text(
+                            controller.userProfile.value?.name ?? "",
+                            style: TextStyle(
+                              fontSize: AppSizes.fontXL,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )),
+                        ),
                         SizedBox(height: AppSizes.height(4)),
-                        Obx(() => Text(
-                          controller.selectedLocation.value,
-                          style: TextStyle(
-                            fontSize: AppSizes.fontM,
-                            color: Colors.grey[600],
+                        Obx(
+                          () => Text(
+                            controller.userProfile.value?.address ?? "",
+                            style: TextStyle(
+                              fontSize: AppSizes.fontM,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        )),
+                        ),
                       ],
                     ),
                   ),
@@ -90,14 +97,14 @@ class ProfileView extends GetView<HomeController> {
                 ],
               ),
             ),
-            
+
             SizedBox(height: AppSizes.height(20)),
-            
+
             // Wallet Summary
             const WalletSummary(),
-            
+
             SizedBox(height: AppSizes.height(20)),
-            
+
             // Profile Options
             Container(
               decoration: BoxDecoration(
@@ -139,7 +146,8 @@ class ProfileView extends GetView<HomeController> {
                     icon: Icons.favorite,
                     title: 'Your Wishlists',
                     subtitle: 'All Favourites',
-                    onTap: () => Get.to(() => WishlistView()),
+                    onTap: () => Get.to(() => const WishlistView()),
+
                   ),
                   _buildDivider(),
                   _buildProfileOption(
@@ -165,9 +173,9 @@ class ProfileView extends GetView<HomeController> {
                 ],
               ),
             ),
-            
+
             SizedBox(height: AppSizes.height(20)),
-            
+
             // Logout Button
             Container(
               decoration: BoxDecoration(
@@ -184,14 +192,14 @@ class ProfileView extends GetView<HomeController> {
               ),
               child: const LogoutButton(),
             ),
-            
+
             SizedBox(height: AppSizes.height(20)),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildProfileOption({
     required IconData icon,
     required String title,
@@ -205,25 +213,15 @@ class ProfileView extends GetView<HomeController> {
           color: Colors.green.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppSizes.radius(8)),
         ),
-        child: Icon(
-          icon,
-          color: Colors.green,
-          size: AppSizes.fontXL,
-        ),
+        child: Icon(icon, color: Colors.green, size: AppSizes.fontXL),
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontSize: AppSizes.fontL,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(fontSize: AppSizes.fontL, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: AppSizes.fontS,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: AppSizes.fontS, color: Colors.grey[600]),
       ),
       trailing: Icon(
         Icons.arrow_forward_ios,
@@ -233,7 +231,7 @@ class ProfileView extends GetView<HomeController> {
       onTap: onTap,
     );
   }
-  
+
   Widget _buildDivider() {
     return Divider(
       height: 1,

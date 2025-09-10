@@ -35,7 +35,7 @@ class AllCategoriesView extends StatelessWidget {
             itemBuilder: (context, index) {
               final category = categories[index];
               return GestureDetector(
-               // onTap: () => Get.to(() => ProductsListView(category: category)),
+                onTap: () => Get.to(() => ProductsListView(categoryId: category.categoryId)),
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -56,7 +56,7 @@ class AllCategoriesView extends StatelessWidget {
                         radius: 30,
                         backgroundColor: AppColors.primary.withOpacity(0.1),
                         child: Icon(
-                          Icons.category,
+                          _getCategoryIcon(category.name ?? ''),
                           color: AppColors.primary,
                           size: AppSizes.font(30),
                         ),
@@ -81,5 +81,48 @@ class AllCategoriesView extends StatelessWidget {
         );
       }),
     );
+  }
+  
+  IconData _getCategoryIcon(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'fruits':
+        return Icons.apple;
+      case 'vegetables':
+        return Icons.eco;
+      case 'dairy':
+        return Icons.local_drink;
+      case 'beverages':
+        return Icons.local_cafe;
+      case 'snacks':
+        return Icons.cookie;
+      case 'bakery':
+        return Icons.cake;
+      case 'meat':
+        return Icons.restaurant;
+      case 'fish':
+        return Icons.set_meal;
+      case 'frozen':
+        return Icons.ac_unit;
+      case 'personal care':
+        return Icons.face;
+      case 'household':
+        return Icons.home;
+      case 'baby care':
+        return Icons.child_care;
+      case 'organic':
+        return Icons.nature;
+      case 'spices & herbs':
+        return Icons.grass;
+      case 'cereals & grains':
+        return Icons.grain;
+      case 'health & wellness':
+        return Icons.health_and_safety;
+      case 'pet care':
+        return Icons.pets;
+      case 'beauty':
+        return Icons.face_retouching_natural;
+      default:
+        return Icons.category;
+    }
   }
 }

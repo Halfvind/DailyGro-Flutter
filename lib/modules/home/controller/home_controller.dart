@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../data/all_products_data.dart';
+import '../../cart/repositories/cart_repository.dart';
+import '../../order/repositories/order_repository.dart';
+import '../../wishlist/repositories/wishlist_repository.dart';
 import '../../../models/category_model.dart';
 import '../../category/controllers/category_controller.dart';
-import '../../product/controllers/product_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
 import '../../wishlist/controllers/wishlist_controller.dart';
 import '../../order/controllers/order_controller.dart';
-import '../models/home_product_model.dart';
+import '../../coupon/controllers/coupon_controller.dart';
+import '../../wallet/controllers/wallet_controller.dart';
 
 
 class HomeController extends GetxController {
@@ -26,10 +28,7 @@ class HomeController extends GetxController {
   RxList<CategoryModel> categoryList = <CategoryModel>[].obs;
   RxInt selectedCategoryIndex = 0.obs;
 
-  // Products
-  RxList<HomeProductModel> featuredProducts = <HomeProductModel>[].obs;
-  RxList<HomeProductModel> recommendedProducts = <HomeProductModel>[].obs;
-  RxList<HomeProductModel> fruitProducts = <HomeProductModel>[].obs;
+  // Products - removed static data, now using API
 
   // Wallet and vouchers
   RxDouble walletAmount = 1500.0.obs;
@@ -42,24 +41,36 @@ class HomeController extends GetxController {
   List<CategoryModel> get categories => categoryList;
 
   final CategoryController categoryController = Get.put(CategoryController());
-  final ProductController productController = Get.put(ProductController());
-  final CartController cartController = Get.put(CartController());
-  final WishlistController wishlistController = Get.put(WishlistController());
-  final OrderController orderController = Get.put(OrderController());
+  
+  // Initialize repositories and controllers
+  late final CartController cartController;
+  late final WishlistController wishlistController;
+  late final OrderController orderController;
 
   @override
   void onInit() {
     super.onInit();
+    _initializeServices();
     initializeHomeData();
   }
   
-  @override
-  void onReady() {
-    super.onReady();
-    // Initialize API-based controllers
-    cartController.loadCart();
-    wishlistController.loadWishlist();
+  void _initializeServices() {
+    // Initialize repositories first
+    Get.put(CartRepository());
+    Get.put(WishlistRepository());
+    Get.put(OrderRepository());
+    
+    // Then initialize controllers (without auto-loading data)
+    cartController = Get.put(CartController());
+    wishlistController = Get.put(WishlistController());
+    orderController = Get.put(OrderController());
+    
+    // Initialize new controllers
+    Get.put(CouponController());
+    Get.put(WalletController());
   }
+  
+
 
   void initializeHomeData() async {
     isLoading.value = true;
@@ -69,16 +80,6 @@ class HomeController extends GetxController {
     // Load categories from API
     await categoryController.loadCategories();
     categoryList.value = categoryController.categories;
-    featuredProducts.value = getFeaturedProducts();
-    recommendedProducts.value = getRecommendedProducts();
-
-    // Only Fruits (categoryId = 1)
-    fruitProducts.value = getProductsByCategory(1);
-
-  /*  // If you want only recommended fruits
-    fruitProducts.value = getProductsByCategory(1)
-        .where((p) => p.isRecommended == true)
-        .toList();*/
 
     walletAmount.value = 1500.0;
     voucherCount.value = 3;

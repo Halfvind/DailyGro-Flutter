@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../../../CommonComponents/CommonWidgets/product_card.dart';
+import '../../../../../CommonComponents/CommonWidgets/api_product_card.dart';
 import '../../../../themes/app_colors.dart';
-import '../../../product_detail/product_detail_view.dart';
-import '../../../product/controllers/product_controller.dart';
+import '../../../products/controllers/products_controller.dart';
 import '../recommended_products_view.dart';
 
 class RecommendedProducts extends StatelessWidget {
@@ -13,28 +12,29 @@ class RecommendedProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productController = Get.find<ProductController>();
+    final productsController = Get.put(ProductsController(), tag: 'recommended');
     
-    return Obx(() {
-      final products = productController.recommendedProducts;
-      if (products.isEmpty) return const SizedBox.shrink();
+    // Load recommended products when widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      productsController.loadRecommendedProducts();
+    });
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Recommended for you",
-                style: TextStyle(
-                  fontSize: AppSizes.sideHeading,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recommended for you',
+              style: TextStyle(
+                fontSize: AppSizes.sideHeading,
+                fontWeight: FontWeight.bold,
               ),
-              GestureDetector(onTap:   (){
-                Get.to(() => const RecommendedProductsView());
-              },child: Container(
+            ),
+            GestureDetector(
+              onTap: () => Get.to(() => const RecommendedProductsView()),
+              child: Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.width(12),
                   vertical: AppSizes.height(6),
@@ -55,34 +55,42 @@ class RecommendedProducts extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
-              ),)
-            ],
-          ),
-          SizedBox(height: AppSizes.height(12)),
-          SizedBox(
+              ),
+            )
+          ],
+        ),
+        SizedBox(height: AppSizes.height(12)),
+        Obx(() {
+          if (productsController.isLoading.value) {
+            return SizedBox(
+              height: AppSizes.height(290),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          if (productsController.products.isEmpty) {
+            return SizedBox(
+              height: AppSizes.height(290),
+              child: Center(child: Text('No recommended products')),
+            );
+          }
+          
+          return SizedBox(
             height: AppSizes.height(290),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: products.length,
+              itemCount: productsController.products.length > 10 ? 10 : productsController.products.length,
               itemBuilder: (context, index) {
-                final product = products[index];
-                return GestureDetector(
-                 /* onTap: () => Get.to(() => ProductDetailView(product: products[index],),
-                      arguments:{
-                        "product": products[index],
-                        "categoryId": products[index].categoryId,
-                      }),*/
-                  child: Container(
-                    width: AppSizes.width(190),
-                    margin: EdgeInsets.only(right: AppSizes.width(12)),
-                    child: ProductCard(product: product),
-                  ),
+                return Container(
+                  width: AppSizes.width(190),
+                  margin: EdgeInsets.only(right: AppSizes.width(12)),
+                  child: ApiProductCard(product: productsController.products[index]),
                 );
               },
             ),
-          ),
-        ],
-      );
-    });
+          );
+        }),
+      ],
+    );
   }
 }

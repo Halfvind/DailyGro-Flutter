@@ -2,29 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../controllers/orders_controller.dart';
-import '../../../controllers/integrated_order_controller.dart';
-import '../../../routes/app_routes.dart';
+import '../../order/controllers/order_controller.dart';
+import 'order_tracking_view.dart';
 
-class OrdersView extends GetView<OrdersController> {
+class OrdersView extends StatelessWidget {
   const OrdersView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final integratedController = Get.find<IntegratedOrderController>();
+    final orderController = Get.put(OrderController());
+    
+    // Load orders data when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      orderController.loadOrders();
+    });
     
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('My Orders'),
+        title: const Text('My Orders'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
       body: Obx(() {
-        final userOrders = integratedController.getUserOrders('user_001');
-        final regularOrders = controller.orders;
+        if (orderController.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
         
-        if (userOrders.isEmpty && regularOrders.isEmpty) {
+        if (orderController.orders.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -57,16 +62,9 @@ class OrdersView extends GetView<OrdersController> {
 
         return ListView.builder(
           padding: EdgeInsets.all(AppSizes.width(16)),
-          itemCount: userOrders.length + regularOrders.length,
+          itemCount: orderController.orders.length,
           itemBuilder: (context, index) {
-            dynamic order;
-            bool isIntegratedOrder = index < userOrders.length;
-            
-            if (isIntegratedOrder) {
-              order = userOrders[index];
-            } else {
-              order = regularOrders[index - userOrders.length];
-            }
+            final order = orderController.orders[index];
             
             return Container(
               margin: EdgeInsets.only(bottom: AppSizes.height(16)),
@@ -85,13 +83,7 @@ class OrdersView extends GetView<OrdersController> {
               ),
               child: InkWell(
                 onTap: () {
-                  final orderId = isIntegratedOrder ? order.id : order.id;
-                  if (orderId != null) {
-                    Get.toNamed(
-                      Routes.orderTracking,
-                      parameters: {'orderId': orderId.toString()},
-                    );
-                  }
+                  Get.to(() => const OrderTrackingView(), arguments: order.orderId);
                 },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +93,7 @@ class OrdersView extends GetView<OrdersController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Order #${isIntegratedOrder ? order.orderNumber : order.id.substring(order.id.length - 6)}',
+                          'Order #${order.orderNumber}',
                           style: TextStyle(
                             fontSize: AppSizes.fontL,
                             fontWeight: FontWeight.bold,
@@ -113,14 +105,14 @@ class OrdersView extends GetView<OrdersController> {
                             vertical: AppSizes.height(4),
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
+                            color: _getStatusColor(order.status).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(AppSizes.radius(4)),
                           ),
                           child: Text(
-                            isIntegratedOrder ? order.status : order.status,
+                            order.status.toUpperCase(),
                             style: TextStyle(
                               fontSize: AppSizes.fontS,
-                              color: Colors.green,
+                              color: _getStatusColor(order.status),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -132,9 +124,7 @@ class OrdersView extends GetView<OrdersController> {
                     
                     // Date and Time
                     Text(
-                      DateFormat('MMM dd, yyyy • hh:mm a').format(
-                        isIntegratedOrder ? order.orderDate : order.orderDate
-                      ),
+                      DateFormat('MMM dd, yyyy • hh:mm a').format(order.createdAt),
                       style: TextStyle(
                         fontSize: AppSizes.fontS,
                         color: Colors.grey[600],
@@ -143,60 +133,18 @@ class OrdersView extends GetView<OrdersController> {
                     
                     SizedBox(height: AppSizes.height(12)),
                     
-                    // Order Items
-                    ...(isIntegratedOrder ? order.items : order.items).map((item) => Padding(
-                      padding: EdgeInsets.only(bottom: AppSizes.height(8)),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: AppSizes.width(40),
-                            height: AppSizes.height(40),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(AppSizes.radius(6)),
-                            ),
-                            child: Icon(
-                              Icons.image,
-                              size: AppSizes.fontXL,
-                              color: Colors.grey[400],
-                            ),
-                          ),
-                          
-                          SizedBox(width: AppSizes.width(12)),
-                          
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.product.name ?? '',
-                                  style: TextStyle(
-                                    fontSize: AppSizes.fontM,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '${item.currentUnit} × ${item.quantity.value}',
-                                  style: TextStyle(
-                                    fontSize: AppSizes.fontS,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          Text(
-                            '₹${item.totalPrice.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: AppSizes.fontM,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
+                    // Delivery Address
+                    Text(
+                      'Delivery to: ${order.deliveryAddress}',
+                      style: TextStyle(
+                        fontSize: AppSizes.fontS,
+                        color: Colors.grey[600],
                       ),
-                    )).toList(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    SizedBox(height: AppSizes.height(12)),
                     
                     Divider(),
                     
@@ -205,17 +153,18 @@ class OrdersView extends GetView<OrdersController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Items (${(isIntegratedOrder ? order.items : order.items).fold(0, (sum, item) => sum + item.quantity.value)})',
+                          'Payment Status',
                           style: TextStyle(
                             fontSize: AppSizes.fontM,
                             color: Colors.grey[600],
                           ),
                         ),
                         Text(
-                          '₹${(isIntegratedOrder ? order.totalAmount : order.totalAmount).toStringAsFixed(0)}',
+                          order.paymentStatus.toUpperCase(),
                           style: TextStyle(
                             fontSize: AppSizes.fontM,
-                            color: Colors.grey[600],
+                            color: order.paymentStatus == 'paid' ? Colors.green : Colors.orange,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -227,14 +176,14 @@ class OrdersView extends GetView<OrdersController> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total Paid',
+                          'Total Amount',
                           style: TextStyle(
                             fontSize: AppSizes.fontL,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          '₹${(isIntegratedOrder ? order.totalAmount : order.totalAmount).toStringAsFixed(0)}',
+                          '₹${order.totalAmount.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: AppSizes.fontL,
                             fontWeight: FontWeight.bold,
@@ -251,5 +200,27 @@ class OrdersView extends GetView<OrdersController> {
         );
       }),
     );
+  }
+  
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.blue;
+      case 'preparing':
+        return Colors.purple;
+      case 'ready_for_pickup':
+        return Colors.indigo;
+      case 'picked_up':
+      case 'out_for_delivery':
+        return Colors.amber;
+      case 'delivered':
+        return Colors.green;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }

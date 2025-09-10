@@ -95,7 +95,7 @@ class AddAddressView extends GetView<AddressController> {
             
             // Default Address Checkbox
             Obx(() => CheckboxListTile(
-              title: Text('Set as default address'),
+              title: const Text('Set as default address'),
               value: isDefaultController.value,
               onChanged: (value) => isDefaultController.value = value!,
               activeColor: Colors.green,

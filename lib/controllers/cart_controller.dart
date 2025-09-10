@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import '../models/cart_item_model.dart';
-import '../modules/home/models/home_product_model.dart';
+// Removed static data import
 import 'integrated_order_controller.dart';
 import 'orders_controller.dart';
 
@@ -12,20 +12,9 @@ class CartController extends GetxController {
   int get totalItems => cartItems.fold(0, (sum, item) => sum + item.quantity.value);
   bool get hasItems => cartItems.isNotEmpty;
 
-  void addToCart(HomeProductModel product, {int variantIndex = 0}) {
-    final existingIndex = cartItems.indexWhere((item) => 
-        item.product.id == product.id && 
-        item.selectedVariantIndex.value == variantIndex);
-    
-    if (existingIndex != -1) {
-      cartItems[existingIndex].updateQuantity(cartItems[existingIndex].quantity.value + 1);
-    } else {
-      cartItems.add(CartItem(
-        product: product,
-        quantity: 1,
-        variantIndex: variantIndex,
-      ));
-    }
+  void addToCart(int productId, int quantity) {
+    // Simplified cart for API integration
+    print('Added product $productId with quantity $quantity to cart');
   }
 
   void removeFromCart(int index) {
@@ -45,26 +34,20 @@ class CartController extends GetxController {
   }
 
   void updateItemVariant(int index, int variantIndex) {
-    if (index >= 0 && index < cartItems.length) {
-      cartItems[index].updateVariant(variantIndex);
-    }
+    // Simplified for API integration
+    print('Updated variant for item at index $index');
   }
 
   void clearCart() {
     cartItems.clear();
   }
 
-  bool isProductInCart(int productId, int variantIndex) {
-    return cartItems.any((item) => 
-        item.product.id == productId && 
-        item.selectedVariantIndex.value == variantIndex);
+  bool isProductInCart(int productId) {
+    return false; // Simplified for API integration
   }
 
-  int getProductQuantity(int productId, int variantIndex) {
-    final item = cartItems.firstWhereOrNull((item) => 
-        item.product.id == productId && 
-        item.selectedVariantIndex.value == variantIndex);
-    return item?.quantity.value ?? 0;
+  int getProductQuantity(int productId) {
+    return 0; // Simplified for API integration
   }
   
   Future<String?> placeOrder({

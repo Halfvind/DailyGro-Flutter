@@ -1,15 +1,13 @@
 import 'package:get/get.dart';
-import '../../../CommonComponents/controllers/global_controller.dart';
-import '../../../models/wishlist_model.dart';
-import '../../../models/product_model.dart';
+import '../../../models/api_product_model.dart';
 import '../repositories/wishlist_repository.dart';
 
 class WishlistController extends GetxController {
   WishlistRepository? _wishlistRepository;
-  GlobalController? _globalController;
 
   final isLoading = false.obs;
-  final wishlistItems = <WishlistModel>[].obs;
+  final wishlistItems = <ApiProductModel>[].obs;
+  final int userId = 11; // Replace with actual user ID from auth
 
   @override
   void onInit() {
@@ -20,34 +18,44 @@ class WishlistController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (_wishlistRepository != null && _globalController != null) {
-      loadWishlist();
-    }
+    // Don't auto-load wishlist - only load when WishlistView is opened
   }
 
   void _initializeServices() {
     try {
       _wishlistRepository = Get.find<WishlistRepository>();
-      _globalController = Get.find<GlobalController>();
     } catch (e) {
       print('Error initializing wishlist services: $e');
-      Future.delayed(Duration(milliseconds: 500), () {
-        _initializeServices();
-      });
     }
   }
 
   Future<void> loadWishlist() async {
-    if (_wishlistRepository == null || _globalController == null) return;
+    if (_wishlistRepository == null) return;
 
     isLoading.value = true;
 
     try {
-      final response = await _wishlistRepository!.getWishlist(_globalController!.userId);
+      final response = await _wishlistRepository!.getWishlist(userId);
 
       if (response.isOk) {
-        final List<dynamic> items = response.body['wishlist_items'] ?? [];
-        wishlistItems.value = items.map((json) => WishlistModel.fromJson(json)).toList();
+        print('Wishlist API Response: ${response.body}');
+        final List<dynamic> wishlistData = response.body['wishlist_items'] ?? [];
+        wishlistItems.value = wishlistData.map((json) => ApiProductModel.fromJson({
+          'product_id': json['product_id'],
+          'name': json['name'],
+          'price': json['price'],
+          'original_price': json['original_price'],
+          'image': json['image'],
+          'unit': json['unit'],
+          'weight': json['weight'],
+          'rating': json['rating'],
+          'is_featured': json['is_featured'],
+          'is_recommended': json['is_recommended'],
+          'category_name': json['category_name'],
+          'discount_percentage': json['discount_percentage'],
+        })).toList();
+        print('Wishlist items loaded: ${wishlistItems.length}');
+        update(); // Trigger UI update
       } else {
         Get.snackbar('Error', response.body['message'] ?? 'Failed to load wishlist');
       }
@@ -59,35 +67,41 @@ class WishlistController extends GetxController {
   }
 
   Future<void> addToWishlist(int productId) async {
-    if (_wishlistRepository == null || _globalController == null) return;
+    if (_wishlistRepository == null) return;
 
     try {
-      final response = await _wishlistRepository!.addToWishlist(_globalController!.userId, productId);
+      final response = await _wishlistRepository!.addToWishlist(userId, productId);
+      print('Add to wishlist response: ${response.body}');
 
       if (response.isOk) {
+        await loadWishlist(); // Refresh wishlist
+        update(); // Trigger global UI update
         Get.snackbar('Success', response.body['message'] ?? 'Added to wishlist');
-        loadWishlist();
       } else {
         Get.snackbar('Error', response.body['message'] ?? 'Failed to add to wishlist');
       }
     } catch (e) {
+      print('Add to wishlist error: $e');
       Get.snackbar('Error', 'Network error occurred');
     }
   }
 
   Future<void> removeFromWishlist(int productId) async {
-    if (_wishlistRepository == null || _globalController == null) return;
+    if (_wishlistRepository == null) return;
 
     try {
-      final response = await _wishlistRepository!.removeFromWishlist(_globalController!.userId, productId);
+      final response = await _wishlistRepository!.removeFromWishlist(userId, productId);
+      print('Remove from wishlist response: ${response.body}');
 
       if (response.isOk) {
+        await loadWishlist(); // Refresh wishlist
+        update(); // Trigger global UI update
         Get.snackbar('Success', response.body['message'] ?? 'Removed from wishlist');
-        loadWishlist();
       } else {
         Get.snackbar('Error', response.body['message'] ?? 'Failed to remove from wishlist');
       }
     } catch (e) {
+      print('Remove from wishlist error: $e');
       Get.snackbar('Error', 'Network error occurred');
     }
   }
@@ -97,12 +111,7 @@ class WishlistController extends GetxController {
   }
   
   Future<void> toggleWishlist(dynamic product) async {
-    int productId;
-    if (product is ProductModel) {
-      productId = product.productId;
-    } else {
-      return;
-    }
+    final productId = product.productId ?? product.id;
     
     if (isInWishlist(productId)) {
       await removeFromWishlist(productId);

@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../models/product_model.dart';
+import '../../models/api_product_model.dart';
 import '../../modules/cart/controllers/cart_controller.dart';
+import '../../modules/product_detail/product_detail_view.dart';
 import '../../modules/wishlist/controllers/wishlist_controller.dart';
 import '../../themes/app_colors.dart';
 import '../CommonUtils/app_sizes.dart';
 
-class ProductCard extends StatelessWidget {
-  final ProductModel product;
+class ApiProductCard extends StatelessWidget {
+  final ApiProductModel product;
 
-  const ProductCard({super.key, required this.product});
+  const ApiProductCard({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => Get.to(() => ProductDetailView(productId: product.productId)),
+      child: Container(
       margin: EdgeInsets.all(AppSizes.width(6)),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -173,6 +176,7 @@ class ProductCard extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -238,76 +242,150 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildCartButton() {
-    return GestureDetector(
-      onTap: () {
-        try {
-          final cartController = Get.find<CartController>();
-          cartController.addToCart(product.productId, 1);
-        } catch (e) {
-          Get.snackbar('Error', 'Cart service not available');
+    return Obx(() {
+      try {
+        final cartController = Get.find<CartController>();
+        final cartItem = cartController.cartItems.firstWhereOrNull((item) => item.productId == product.productId);
+        final isInCart = cartItem != null;
+        
+        if (isInCart) {
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(AppSizes.radius(20)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (cartItem!.quantity > 1) {
+                      cartController.updateCartItem(cartItem.cartId, cartItem.quantity - 1);
+                    } else {
+                      cartController.removeFromCart(cartItem.cartId);
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(AppSizes.width(4)),
+                    child: Icon(
+                      Icons.remove,
+                      size: AppSizes.font(12),
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSizes.width(8),
+                    vertical: AppSizes.height(4),
+                  ),
+                  child: Text(
+                    cartItem!.quantity.toString(),
+                    style: TextStyle(
+                      fontSize: AppSizes.font(12),
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    cartController.updateCartItem(cartItem.cartId, cartItem.quantity + 1);
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(AppSizes.width(4)),
+                    child: Icon(
+                      Icons.add,
+                      size: AppSizes.font(12),
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSizes.width(12),
-          vertical: AppSizes.height(6),
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.primary, width: 1.2),
-          borderRadius: BorderRadius.circular(AppSizes.radius(20)),
-        ),
-        child: Text(
-          "+ ADD",
-          style: TextStyle(
-            fontSize: AppSizes.font(12),
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-            letterSpacing: 0.5,
+        
+        return GestureDetector(
+          onTap: () {
+            cartController.addToCart(product.productId, 1);
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSizes.width(12),
+              vertical: AppSizes.height(6),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: AppColors.primary, width: 1.2),
+              borderRadius: BorderRadius.circular(AppSizes.radius(20)),
+            ),
+            child: Text(
+              "+ ADD",
+              style: TextStyle(
+                fontSize: AppSizes.font(12),
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
           ),
-        ),
-      ),
-    );
+        );
+      } catch (e) {
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSizes.width(12),
+            vertical: AppSizes.height(6),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: AppColors.primary, width: 1.2),
+            borderRadius: BorderRadius.circular(AppSizes.radius(20)),
+          ),
+          child: Text(
+            "+ ADD",
+            style: TextStyle(
+              fontSize: AppSizes.font(12),
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+              letterSpacing: 0.5,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   Widget _buildWishlistButton() {
-    return GestureDetector(
-      onTap: () {
-        try {
-          final wishlistController = Get.find<WishlistController>();
-          if (wishlistController.isInWishlist(product.productId)) {
-            wishlistController.removeFromWishlist(product.productId);
-          } else {
-            wishlistController.addToWishlist(product.productId);
-          }
-        } catch (e) {
-          Get.snackbar('Error', 'Wishlist service not available');
-        }
-      },
-      child: Container(
-        padding: EdgeInsets.all(AppSizes.width(4)),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-        ),
-        child: Obx(() {
-          try {
-            final wishlistController = Get.find<WishlistController>();
-            final isInWishlist = wishlistController.isInWishlist(product.productId);
-            return Icon(
+    return GetBuilder<WishlistController>(
+      id: 'wishlist_${product.productId}',
+      init: Get.find<WishlistController>(),
+      builder: (wishlistController) {
+        final isInWishlist = wishlistController.isInWishlist(product.productId);
+        
+        return GestureDetector(
+          onTap: () async {
+            if (isInWishlist) {
+              await wishlistController.removeFromWishlist(product.productId);
+            } else {
+              await wishlistController.addToWishlist(product.productId);
+            }
+            wishlistController.update(['wishlist_${product.productId}']);
+          },
+          child: Container(
+            padding: EdgeInsets.all(AppSizes.width(4)),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
               isInWishlist ? Icons.favorite : Icons.favorite_border,
               size: AppSizes.font(16),
               color: isInWishlist ? Colors.red : Colors.grey[600],
-            );
-          } catch (e) {
-            return Icon(
-              Icons.favorite_border,
-              size: AppSizes.font(16),
-              color: Colors.grey[600],
-            );
-          }
-        }),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

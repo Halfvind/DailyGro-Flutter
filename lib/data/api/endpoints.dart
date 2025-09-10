@@ -10,7 +10,8 @@ class ApiEndpoints {
   static const String userProfile = 'user/get_user_profile';
   static const String userUpdate = 'user_registration';
   static const String userOrders = '/user/orders';
-  
+  static const String products = 'products';
+
   // Vendor endpoints
   static const String vendorRegister = 'user_registration';
   static const String vendorProfile = 'vendor/get_vendor_profile';
@@ -28,7 +29,7 @@ class ApiEndpoints {
   static const String updateOrderStatus = '/rider/orders/{id}/status';
   
   // Product endpoints
-  static const String products = '/products';
+  //static const String products = '/products';
   static const String categories = '/categories';
   static const String searchProducts = '/products/search';
   

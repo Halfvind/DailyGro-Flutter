@@ -69,7 +69,7 @@ class OrderTrackingScreen extends StatelessWidget {
               ...order.items.map((item) => Card(
                 margin: EdgeInsets.only(bottom: 8),
                 child: ListTile(
-                  title: Text(item.product.name),
+                  title: Text(item.productName),
                   subtitle: Text('Quantity: ${item.quantity.value}'),
                   trailing: Text('\$${item.totalPrice.toStringAsFixed(2)}'),
                 ),

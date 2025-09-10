@@ -20,9 +20,7 @@ class OrderController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (_orderRepository != null && _globalController != null) {
-      loadOrders();
-    }
+    // Don't auto-load orders - only load when OrdersView is opened
   }
 
   void _initializeServices() {
@@ -31,9 +29,6 @@ class OrderController extends GetxController {
       _globalController = Get.find<GlobalController>();
     } catch (e) {
       print('Error initializing order services: $e');
-      Future.delayed(Duration(milliseconds: 500), () {
-        _initializeServices();
-      });
     }
   }
 
@@ -78,6 +73,17 @@ class OrderController extends GetxController {
       );
 
       if (response.isOk) {
+        // Process wallet payment if selected
+        if (paymentMethod == 'wallet') {
+          final orderId = response.body['order_id'];
+          final walletResponse = await _orderRepository!.processWalletPayment(_globalController!.userId, orderId, totalAmount);
+          
+          if (!walletResponse.isOk || walletResponse.body['status'] != 'success') {
+            Get.snackbar('Error', walletResponse.body['message'] ?? 'Wallet payment failed');
+            return null;
+          }
+        }
+        
         Get.snackbar('Success', response.body['message'] ?? 'Order created successfully');
         loadOrders();
         return response.body;

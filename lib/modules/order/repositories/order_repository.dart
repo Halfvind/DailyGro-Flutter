@@ -30,4 +30,12 @@ class OrderRepository extends GetxService {
   Future<Response> getOrderTracking(int orderId) {
     return _apiClient.get('users/order_tracking?order_id=$orderId');
   }
+  
+  Future<Response> processWalletPayment(int userId, int orderId, double amount) {
+    return _apiClient.post('users/wallet_payment', {
+      'user_id': userId,
+      'order_id': orderId,
+      'amount': amount,
+    });
+  }
 }

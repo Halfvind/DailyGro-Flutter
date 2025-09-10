@@ -104,7 +104,7 @@ class GlobalController extends GetxController {
     debugPrint("   🎭 User Role: $savedUserRole");
     debugPrint("   ✅ Is Logged In: $isLoggedIn");
 
-    if (isLoggedIn && savedUserId != null) {
+    if (isLoggedIn && savedUserId != null && savedUserId.isNotEmpty) {
       debugPrint("🔹 Auto-login possible, restoring user session...");
 
       _currentUserId.value = savedUserId;

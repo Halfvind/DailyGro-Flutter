@@ -2,14 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../cart/controllers/cart_controller.dart';
-import '../../controllers/coupon_controller.dart';
+import '../coupon/controllers/coupon_controller.dart';
 import '../orders/widgets/coupon_bottom_sheet.dart';
 import 'order_summary_view.dart';
 
-class CartView extends GetView<CartController> {
+class CartView extends StatefulWidget {
   const CartView({super.key});
 
+  @override
+  State<CartView> createState() => _CartViewState();
+}
+
+class _CartViewState extends State<CartView> {
   CouponController get couponController => Get.find<CouponController>();
+  CartController get controller => Get.find<CartController>();
+
+  @override
+  void initState() {
+    super.initState();
+  //  controller = Get.find<CartController>();
+    controller.loadCart();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,25 +99,25 @@ class CartView extends GetView<CartController> {
                           ),
                           child: cartItem.image != null
                               ? Image.network(
-                                  'http://localhost/dailygro/uploads/${cartItem.image}',
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.image,
-                                      size: AppSizes.fontXXXL,
-                                      color: Colors.grey[400],
-                                    );
-                                  },
-                                )
+                            'http://localhost/dailygro/uploads/${cartItem.image}',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.image,
+                                size: AppSizes.fontXXXL,
+                                color: Colors.grey[400],
+                              );
+                            },
+                          )
                               : Icon(
-                                  Icons.image,
-                                  size: AppSizes.fontXXXL,
-                                  color: Colors.grey[400],
-                                ),
+                            Icons.image,
+                            size: AppSizes.fontXXXL,
+                            color: Colors.grey[400],
+                          ),
                         ),
-                        
+
                         SizedBox(width: AppSizes.width(12)),
-                        
+
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +130,7 @@ class CartView extends GetView<CartController> {
                                 ),
                               ),
                               SizedBox(height: AppSizes.height(4)),
-                              
+
                               Text(
                                 '${cartItem.weight} ${cartItem.unit}',
                                 style: TextStyle(
@@ -125,9 +138,9 @@ class CartView extends GetView<CartController> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              
+
                               SizedBox(height: AppSizes.height(8)),
-                              
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -139,7 +152,7 @@ class CartView extends GetView<CartController> {
                                       color: Colors.green,
                                     ),
                                   ),
-                                  
+
                                   Container(
                                     decoration: BoxDecoration(
                                       color: Colors.green,
@@ -206,7 +219,7 @@ class CartView extends GetView<CartController> {
                 },
               ),
             ),
-            
+
             Container(
               padding: EdgeInsets.all(AppSizes.width(16)),
               decoration: BoxDecoration(
@@ -241,9 +254,9 @@ class CartView extends GetView<CartController> {
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: AppSizes.height(8)),
-                  
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -264,9 +277,9 @@ class CartView extends GetView<CartController> {
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: AppSizes.height(16)),
-                  
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -297,3 +310,5 @@ class CartView extends GetView<CartController> {
     );
   }
 }
+
+

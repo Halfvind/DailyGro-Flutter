@@ -5,28 +5,25 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'CommonComponents/CommonUtils/app_sizes.dart';
 import 'CommonComponents/controllers/global_controller.dart';
-
-
-import 'controllers/coupon_controller.dart';
 import 'controllers/orders_controller.dart';
 import 'controllers/integrated_order_controller.dart';
 import 'controllers/user_controller.dart';
-import 'controllers/wallet_controller.dart';
-
 import 'data/api/api_client.dart';
 import 'data/api/services/user_api_service.dart';
 import 'data/api/services/vendor_api_service.dart';
 import 'data/api/services/rider_api_service.dart';
 import 'data/api/services/profile_api_service.dart';
 
+import 'modules/coupon/controllers/coupon_controller.dart';
 import 'modules/vendor/repositories/vendor_repository.dart';
 import 'modules/rider/repositories/rider_repository.dart';
 import 'modules/address/repositories/address_repository.dart';
 import 'modules/category/repositories/category_repository.dart';
 import 'modules/product/repositories/product_repository.dart';
-import 'modules/wishlist/repositories/wishlist_repository.dart';
-import 'modules/cart/repositories/cart_repository.dart';
-import 'modules/order/repositories/order_repository.dart';
+import 'modules/coupon/repositories/coupon_repository.dart';
+import 'modules/wallet/controllers/wallet_controller.dart';
+import 'modules/wallet/repositories/wallet_repository.dart';
+import 'modules/products/repositories/products_repository.dart';
 import 'services/location_service.dart';
 import 'services/notification_service.dart';
 import 'themes/app_theme.dart';
@@ -46,9 +43,9 @@ Future<void> main() async {
   Get.put(AddressRepository());
   Get.put(CategoryRepository());
   Get.put(ProductRepository());
-  Get.put(WishlistRepository());
-  Get.put(CartRepository());
-  Get.put(OrderRepository());
+  Get.put(CouponRepository());
+  Get.put(WalletRepository());
+  Get.put(ProductsRepository());
   
   // Initialize global controllers
   Get.put(GlobalController());

@@ -16,6 +16,10 @@ class WishlistRepository extends GetxService {
   }
 
   Future<Response> removeFromWishlist(int userId, int productId) {
-    return _apiClient.delete('users/wishlist?user_id=$userId&product_id=$productId');
+    return _apiClient.delete('users/wishlist', query: {
+      'user_id': userId.toString(),
+      'product_id': productId.toString(),
+
+    });
   }
 }

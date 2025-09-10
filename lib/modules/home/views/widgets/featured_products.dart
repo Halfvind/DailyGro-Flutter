@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../../CommonComponents/CommonUtils/app_sizes.dart';
-import '../../../../../CommonComponents/CommonWidgets/product_card.dart';
+import '../../../../../CommonComponents/CommonWidgets/api_product_card.dart';
 import '../../../../themes/app_colors.dart';
-import '../../../product_detail/product_detail_view.dart';
-import '../../controller/home_controller.dart';
-import '../../../product/controllers/product_controller.dart';
+import '../../../products/controllers/products_controller.dart';
 import '../featured_products_view.dart';
 
 class FeaturedProducts extends StatelessWidget {
@@ -14,28 +12,29 @@ class FeaturedProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productController = Get.find<ProductController>();
+    final productsController = Get.put(ProductsController(), tag: 'featured');
     
-    return Obx(() {
-      final products = productController.featuredProducts;
-      if (products.isEmpty) return const SizedBox.shrink();
+    // Load featured products when widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      productsController.loadFeaturedProducts();
+    });
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Featured Products",
-                style: TextStyle(
-                  fontSize: AppSizes.sideHeading,
-                  fontWeight: FontWeight.bold,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Featured Products",
+              style: TextStyle(
+                fontSize: AppSizes.sideHeading,
+                fontWeight: FontWeight.bold,
               ),
-              GestureDetector(onTap:   (){
-                Get.to(() => const FeaturedProductsView());
-              },child: Container(
+            ),
+            GestureDetector(
+              onTap: () => Get.to(() => const FeaturedProductsView()),
+              child: Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.width(12),
                   vertical: AppSizes.height(6),
@@ -56,34 +55,42 @@ class FeaturedProducts extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
-              ),)
-            ],
-          ),
-          SizedBox(height: AppSizes.height(12)),
-          SizedBox(
+              ),
+            )
+          ],
+        ),
+        SizedBox(height: AppSizes.height(12)),
+        Obx(() {
+          if (productsController.isLoading.value) {
+            return SizedBox(
+              height: AppSizes.height(290),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          
+          if (productsController.products.isEmpty) {
+            return SizedBox(
+              height: AppSizes.height(290),
+              child: Center(child: Text('No featured products')),
+            );
+          }
+          
+          return SizedBox(
             height: AppSizes.height(290),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: products.length,
+              itemCount: productsController.products.length > 10 ? 10 : productsController.products.length,
               itemBuilder: (context, index) {
-                final product = products[index];
-                return GestureDetector(
-                 /* onTap: () => Get.to(() => ProductDetailView(product: products[index],),
-                      arguments:{
-                        "product": products[index],
-                        "categoryId": products[index].categoryId,
-                      }),*/
-                  child: Container(
-                    width: AppSizes.width(190),
-                    margin: EdgeInsets.only(right: AppSizes.width(12)),
-                    child: ProductCard(product: product),
-                  ),
+                return Container(
+                  width: AppSizes.width(190),
+                  margin: EdgeInsets.only(right: AppSizes.width(12)),
+                  child: ApiProductCard(product: productsController.products[index]),
                 );
               },
             ),
-          ),
-        ],
-      );
-    });
+          );
+        }),
+      ],
+    );
   }
 }
