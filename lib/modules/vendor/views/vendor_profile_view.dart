@@ -1,3 +1,4 @@
+/*
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../CommonComponents/CommonWidgets/common_material_button.dart';
@@ -69,7 +70,8 @@ class VendorProfileView extends StatelessWidget {
               
               CommonButton(
                 text: 'Refresh Profile',
-                onPressed: controller.loadVendorProfile,
+                onPressed: (){},
+                //controller.loadVendorProfile,
                 backgroundColor: Colors.grey[600],
               ),
             ],
@@ -147,11 +149,13 @@ class VendorProfileView extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              controller.updateProfile({
+           */
+/*   controller.updateProfile({
                 'business_name': nameController.text,
                 'phone': phoneController.text,
                 'business_address': addressController.text,
-              });
+              });*//*
+
               Get.back();
             },
             child: const Text('Update'),
@@ -160,4 +164,4 @@ class VendorProfileView extends StatelessWidget {
       ),
     );
   }
-}
+}*/

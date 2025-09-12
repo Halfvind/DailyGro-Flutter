@@ -1,3 +1,4 @@
+/*
 import 'package:get/get.dart';
 import '../../../CommonComponents/controllers/global_controller.dart';
 import '../../../models/user_model.dart';
@@ -13,16 +14,18 @@ class VendorProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadVendorProfile();
+    //loadVendorProfile();
   }
 
-  Future<void> loadVendorProfile() async {
-    final userId = _globalController.currentUserId;
-    if (userId.isEmpty) return;
+*/
+/*  Future<void> loadVendorProfile() async {
+    int userId = _globalController!.userId.value;
+    //final userId = _globalController.currentUserId;
+    if (userId.isEqual(0)) return;
 
     isLoading.value = true;
     try {
-      final response = await _repository.getVendorProfile(userId);
+      final response = await _repository.getVendorProfile(userId.toString());
       if (response.isOk) {
         vendorProfile.value = UserModel.fromProfileResponse(response.body);
       } else {
@@ -36,12 +39,12 @@ class VendorProfileController extends GetxController {
   }
 
   Future<void> updateProfile(Map<String, dynamic> data) async {
-    final userId = _globalController.currentUserId;
-    if (userId.isEmpty) return;
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) return;
 
     isLoading.value = true;
     try {
-      final response = await _repository.updateVendorProfile(userId, data);
+      final response = await _repository.updateVendorProfile(userIdInt.toString(), data);
       if (response.isOk) {
         Get.snackbar('Success', 'Profile updated successfully');
         await loadVendorProfile();
@@ -53,5 +56,6 @@ class VendorProfileController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-}
+  }*//*
+
+}*/

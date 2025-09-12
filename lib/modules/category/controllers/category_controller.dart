@@ -27,9 +27,7 @@ class CategoryController extends GetxController {
       _categoryRepository = Get.find<CategoryRepository>();
     } catch (e) {
       print('Error initializing category services: $e');
-      Future.delayed(Duration(milliseconds: 500), () {
-        _initializeServices();
-      });
+      // Don't retry indefinitely to avoid infinite loops
     }
   }
 

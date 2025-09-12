@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../cart/repositories/cart_repository.dart';
 import '../../order/repositories/order_repository.dart';
 import '../../wishlist/repositories/wishlist_repository.dart';
+import '../../category/repositories/category_repository.dart';
 import '../../../models/category_model.dart';
 import '../../category/controllers/category_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
@@ -60,6 +61,13 @@ class HomeController extends GetxController {
     Get.put(WishlistRepository());
     Get.put(OrderRepository());
     
+    // Initialize category repository
+    try {
+      Get.put(CategoryRepository());
+    } catch (e) {
+      print('CategoryRepository already exists: $e');
+    }
+    
     // Then initialize controllers (without auto-loading data)
     cartController = Get.put(CartController());
     wishlistController = Get.put(WishlistController());
@@ -78,8 +86,13 @@ class HomeController extends GetxController {
     await Future.delayed(const Duration(seconds: 1)); // Simulated delay
 
     // Load categories from API
-    await categoryController.loadCategories();
-    categoryList.value = categoryController.categories;
+    try {
+      await categoryController.loadCategories();
+      categoryList.value = categoryController.categories;
+    } catch (e) {
+      print('Error loading categories: $e');
+      categoryList.value = [];
+    }
 
     walletAmount.value = 1500.0;
     voucherCount.value = 3;

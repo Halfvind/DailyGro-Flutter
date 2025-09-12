@@ -30,9 +30,9 @@ class CouponController extends GetxController {
     if (_couponRepository == null || _globalController == null) return;
 
     isLoading.value = true;
-
+    int userIdInt = _globalController!.userId.value;
     try {
-      final response = await _couponRepository!.getCoupons(_globalController!.userId);
+      final response = await _couponRepository!.getCoupons(userIdInt);
 
       if (response.isOk && response.body['status'] == 'success') {
         final List<dynamic> couponList = response.body['coupons'] ?? [];

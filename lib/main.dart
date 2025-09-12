@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'CommonComponents/CommonUtils/app_sizes.dart';
 import 'CommonComponents/controllers/global_controller.dart';
+import 'CommonComponents/controllers/shared_preference.dart';
 import 'controllers/orders_controller.dart';
 import 'controllers/integrated_order_controller.dart';
 import 'controllers/user_controller.dart';
@@ -30,7 +31,7 @@ import 'themes/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  await SharedPrefHelper.init();
   // Initialize core services
   await Get.putAsync(() => NotificationService().init());
   await Get.putAsync(() => LocationService().init());

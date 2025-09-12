@@ -103,23 +103,13 @@ class LoginController extends GetxController {
         print('HELLO CHECKING >>>>>>>$userModel');
         
         if (_globalController != null) {
-          final userData = response.body['data']['user'];
-          print('🔍 Login Controller - User Data from API:');
-          print('   📦 Full response.body: ${response.body}');
-          print('   👤 userData: $userData');
-          print('   🆔 userData["id"]: ${userData?['id']}');
-          print('   📝 userData["name"]: ${userData?['name']}');
-          print('   🎭 userData["role"]: ${userData?['role']}');
-          
+          final userData = response.body['data'];
           _globalController!.setUserData(userData);
           
           // Verify after setting
           print('🔍 After setUserData:');
-          print('   🆔 GlobalController.currentUserId: ${_globalController!.currentUserId}');
           print('   🔢 GlobalController.userId: ${_globalController!.userId}');
-          
-          // Test userId functionality
-          _globalController!.testUserId();
+
         } else {
           print('GlobalController is null, skipping user data setting');
         }

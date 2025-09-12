@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../CommonComponents/controllers/global_controller.dart';
 import '../../../models/order_model.dart';
 import '../repositories/order_repository.dart';
@@ -35,10 +36,12 @@ class OrderController extends GetxController {
   Future<void> loadOrders() async {
     if (_orderRepository == null || _globalController == null) return;
 
+    int userIdInt = _globalController!.userId.value;
+
     isLoading.value = true;
 
     try {
-      final response = await _orderRepository!.getOrders(_globalController!.userId);
+      final response = await _orderRepository!.getOrders(userIdInt);
 
       if (response.isOk) {
         final List<dynamic> orderList = response.body['orders'] ?? [];
@@ -53,6 +56,8 @@ class OrderController extends GetxController {
     }
   }
 
+
+
   Future createOrder({
     required double totalAmount,
     required int addressId,
@@ -62,10 +67,10 @@ class OrderController extends GetxController {
     if (_orderRepository == null || _globalController == null) return;
 
     isLoading.value = true;
-
+    int userIdInt = _globalController!.userId.value;
     try {
       final response = await _orderRepository!.createOrder(
-        userId: _globalController!.userId,
+        userId: userIdInt,
         totalAmount: totalAmount,
         addressId: addressId,
         paymentMethod: paymentMethod,
@@ -76,7 +81,7 @@ class OrderController extends GetxController {
         // Process wallet payment if selected
         if (paymentMethod == 'wallet') {
           final orderId = response.body['order_id'];
-          final walletResponse = await _orderRepository!.processWalletPayment(_globalController!.userId, orderId, totalAmount);
+          final walletResponse = await _orderRepository!.processWalletPayment(userIdInt, orderId, totalAmount);
           
           if (!walletResponse.isOk || walletResponse.body['status'] != 'success') {
             Get.snackbar('Error', walletResponse.body['message'] ?? 'Wallet payment failed');

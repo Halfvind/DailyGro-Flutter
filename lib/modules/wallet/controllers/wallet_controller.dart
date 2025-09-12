@@ -28,11 +28,11 @@ class WalletController extends GetxController {
 
   Future<void> loadWallet() async {
     if (_walletRepository == null || _globalController == null) return;
-
+    int userIdInt = _globalController!.userId.value;
     isLoading.value = true;
 
     try {
-      final response = await _walletRepository!.getWallet(_globalController!.userId);
+      final response = await _walletRepository!.getWallet(userIdInt);
 
       if (response.isOk) {
         wallet.value = WalletModel.fromJson(response.body['wallet']);

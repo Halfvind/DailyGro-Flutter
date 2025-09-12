@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../CommonComponents/controllers/shared_preference.dart';
 import '../api_client.dart';
 
 class VendorApiService extends GetxService {
@@ -28,7 +29,7 @@ class VendorApiService extends GetxService {
   Future<Response> login({
     required String email,
     required String password,
-  }) {
+  }) async {
     print('=== VENDOR API SERVICE LOGIN ===');
     print('Email: $email');
     print('Role: vendor');
@@ -39,7 +40,8 @@ class VendorApiService extends GetxService {
       'role': 'vendor',
     };
     print('Login data: $data');
-    
+
+
     return _apiClient.login(data);
   }
 

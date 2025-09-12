@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../CommonComponents/controllers/global_controller.dart';
 import '../../../models/api_product_model.dart';
 import '../repositories/wishlist_repository.dart';
 
@@ -7,8 +8,8 @@ class WishlistController extends GetxController {
 
   final isLoading = false.obs;
   final wishlistItems = <ApiProductModel>[].obs;
-  final int userId = 11; // Replace with actual user ID from auth
-
+ // final int userId = 11; // Replace with actual user ID from auth
+  GlobalController? _globalController;
   @override
   void onInit() {
     super.onInit();
@@ -24,6 +25,7 @@ class WishlistController extends GetxController {
   void _initializeServices() {
     try {
       _wishlistRepository = Get.find<WishlistRepository>();
+      _globalController = Get.find<GlobalController>();
     } catch (e) {
       print('Error initializing wishlist services: $e');
     }
@@ -33,9 +35,9 @@ class WishlistController extends GetxController {
     if (_wishlistRepository == null) return;
 
     isLoading.value = true;
-
+    int userIdInt = _globalController!.userId.value;
     try {
-      final response = await _wishlistRepository!.getWishlist(userId);
+      final response = await _wishlistRepository!.getWishlist(userIdInt);
 
       if (response.isOk) {
         print('Wishlist API Response: ${response.body}');
@@ -68,9 +70,9 @@ class WishlistController extends GetxController {
 
   Future<void> addToWishlist(int productId) async {
     if (_wishlistRepository == null) return;
-
+    int userIdInt = _globalController!.userId.value;
     try {
-      final response = await _wishlistRepository!.addToWishlist(userId, productId);
+      final response = await _wishlistRepository!.addToWishlist(userIdInt, productId);
       print('Add to wishlist response: ${response.body}');
 
       if (response.isOk) {
@@ -88,9 +90,9 @@ class WishlistController extends GetxController {
 
   Future<void> removeFromWishlist(int productId) async {
     if (_wishlistRepository == null) return;
-
+    int userIdInt = _globalController!.userId.value;
     try {
-      final response = await _wishlistRepository!.removeFromWishlist(userId, productId);
+      final response = await _wishlistRepository!.removeFromWishlist(userIdInt, productId);
       print('Remove from wishlist response: ${response.body}');
 
       if (response.isOk) {

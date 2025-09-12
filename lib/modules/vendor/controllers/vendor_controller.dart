@@ -52,10 +52,7 @@ class VendorController extends GetxController {
   Future<void> loadDashboard() async {
     _isLoading.value = true;
     try {
-      final data = await _repository.getDashboardData();
-
-      print('CHECKING THE data OF DASHBOARD IN VENDOR CONTROLLER  $data');
-      // Always load dummy data for now
+      // Load dummy data for now
       _vendor.value = VendorModel(
         id: '1',
         name: 'Fresh Mart Store',
@@ -75,43 +72,35 @@ class VendorController extends GetxController {
   
   Future<void> loadProducts() async {
     try {
-      final data = await _repository.getProducts();
-
-      print('WE ARE LOADING THE PRODUCTS OF VENDOR $data');
-      if (data != null) {
-      //  _products.value = data.map((json) => ProductModel.fromJson(json)).toList();
-      } else {
-        // Load dummy products for new vendors
-        _products.value = [
-          ProductModel(
-            id: '1',
-            name: 'Fresh Apples',
-            description: 'Crispy red apples',
-            price: 3.99,
-            category: 'Fruits',
-            imageUrl: '',
-            stock: 50,
-            isActive: true,
-            createdAt: DateTime.now(),
-          ),
-          ProductModel(
-            id: '2',
-            name: 'Organic Milk',
-            description: 'Fresh organic milk',
-            price: 4.50,
-            category: 'Dairy',
-            imageUrl: '',
-            stock: 25,
-            isActive: true,
-            createdAt: DateTime.now(),
-          ),
-        ];
-      }
+      // Load dummy products for now
+      _products.value = [
+        ProductModel(
+          id: '1',
+          name: 'Fresh Apples',
+          description: 'Crispy red apples',
+          price: 3.99,
+          category: 'Fruits',
+          imageUrl: '',
+          stock: 50,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        ProductModel(
+          id: '2',
+          name: 'Organic Milk',
+          description: 'Fresh organic milk',
+          price: 4.50,
+          category: 'Dairy',
+          imageUrl: '',
+          stock: 25,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+      ];
     } catch (e) {
-      // Handle error
+      print('Error loading products: $e');
     }
   }
-  
   Future<bool> addProduct(ProductModel product) async {
     try {
       final newProduct = ProductModel(

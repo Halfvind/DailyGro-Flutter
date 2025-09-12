@@ -37,11 +37,11 @@ class CartController extends GetxController {
 
   Future<void> loadCart() async {
     if (_cartRepository == null || _globalController == null) return;
-
+    int userIdInt = _globalController!.userId.value;
     isLoading.value = true;
 
     try {
-      final response = await _cartRepository!.getCart(_globalController!.userId);
+      final response = await _cartRepository!.getCart(userIdInt);
 
       if (response.isOk) {
         final List<dynamic> items = response.body['cart_items'] ?? [];
@@ -59,10 +59,12 @@ class CartController extends GetxController {
   }
 
   Future<void> addToCart(int productId, int quantity) async {
+    int userIdInt = _globalController!.userId.value;
+    print('CHECKING WITH THIS USER ID >>>>>$userIdInt');
     if (_cartRepository == null || _globalController == null) return;
 
     try {
-      final response = await _cartRepository!.addToCart(_globalController!.userId, productId, quantity);
+      final response = await _cartRepository!.addToCart(userIdInt, productId, quantity);
 
       if (response.isOk) {
         Get.snackbar('Success', response.body['message'] ?? 'Added to cart');

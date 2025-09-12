@@ -17,12 +17,12 @@ class RiderProfileController extends GetxController {
   }
 
   Future<void> loadRiderProfile() async {
-    final userId = _globalController.currentUserId;
-    if (userId.isEmpty) return;
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) return;
 
     isLoading.value = true;
     try {
-      final response = await _repository.getRiderProfile(userId);
+      final response = await _repository.getRiderProfile(userIdInt.toString());
       if (response.isOk) {
         riderProfile.value = UserModel.fromProfileResponse(response.body);
       } else {
@@ -36,12 +36,12 @@ class RiderProfileController extends GetxController {
   }
 
   Future<void> updateProfile(Map<String, dynamic> data) async {
-    final userId = _globalController.currentUserId;
-    if (userId.isEmpty) return;
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) return;
 
     isLoading.value = true;
     try {
-      final response = await _repository.updateRiderProfile(userId, data);
+      final response = await _repository.updateRiderProfile(userIdInt.toString(), data);
       if (response.isOk) {
         Get.snackbar('Success', 'Profile updated successfully');
         await loadRiderProfile();

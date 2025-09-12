@@ -43,7 +43,7 @@ class CategoryList extends GetView<HomeController> {
           return GestureDetector(
             onTap: () {
              print('>>>>>>>>>categoryId>>>>>>>>>${displayCategories[index].categoryId}');
-              Get.to(() => ProductsListView(categoryId:displayCategories[index].categoryId ,));
+              Get.to(() => ProductsListView(categoryId: displayCategories[index].categoryId ?? 0));
             },
             child: Container(
               decoration: BoxDecoration(
@@ -65,14 +65,14 @@ class CategoryList extends GetView<HomeController> {
                       borderRadius: BorderRadius.circular(AppSizes.radius(12)),
                     ),
                     child: Icon(
-                      _getCategoryIcon(category.name),
+                      _getCategoryIcon(category.name ?? ''),
                       color: colorPair[1],
                       size: AppSizes.font(20),
                     ),
                   ),
                   AppSizes.vSpace(8),
                   Text(
-                    category.name,
+                    category.name ?? 'Category',
                     style: TextStyle(
                       fontSize: AppSizes.font(11),
                       fontWeight: FontWeight.w600,

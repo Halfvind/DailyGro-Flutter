@@ -42,18 +42,18 @@ class ProfileController extends GetxController {
       print('Services not initialized yet');
       return;
     }
-    
-    final userId = _globalController!.currentUserId;
-    if (userId.isEmpty) {
+
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) {
       Get.snackbar('Error', 'User ID not found');
       return;
     }
 
-    print('Loading profile for user ID: $userId');
+    print('Loading profile for user ID: $userIdInt');
     isLoading.value = true;
     
     try {
-      final response = await _profileApiService!.getUserProfile(userId);
+      final response = await _profileApiService!.getUserProfile(userIdInt.toString());
       
       print('Profile API Response:');
       print('Status: ${response.statusCode}');
@@ -82,9 +82,9 @@ class ProfileController extends GetxController {
       Get.snackbar('Error', 'Services not available');
       return;
     }
-    
-    final userId = _globalController!.currentUserId;
-    if (userId.isEmpty) {
+
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) {
       Get.snackbar('Error', 'User ID not found');
       return;
     }
@@ -92,7 +92,7 @@ class ProfileController extends GetxController {
     isLoading.value = true;
     
     try {
-      final response = await _profileApiService!.updateUserProfile(userId, data);
+      final response = await _profileApiService!.updateUserProfile(userIdInt.toString(), data);
       
       if (response.isOk) {
         Get.snackbar('Success', 'Profile updated successfully');

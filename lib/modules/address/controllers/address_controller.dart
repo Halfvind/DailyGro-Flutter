@@ -42,9 +42,8 @@ class AddressController extends GetxController {
       print('Address services not initialized yet');
       return;
     }
-
-    final userId = _globalController!.currentUserId;
-    if (userId.isEmpty) {
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt.isEqual(0)) {
       Get.snackbar('Error', 'User ID not found');
       return;
     }
@@ -52,7 +51,7 @@ class AddressController extends GetxController {
     isLoading.value = true;
 
     try {
-      final response = await _addressRepository!.getAddresses(userId);
+      final response = await _addressRepository!.getAddresses(userIdInt.toString());
 
       if (response.isOk) {
         final List<dynamic> addressList = response.body['addresses'] ?? [];
@@ -73,8 +72,8 @@ class AddressController extends GetxController {
       return;
     }
 
-    final userId = _globalController!.currentUserId;
-    data['user_id'] = userId;
+    int userIdInt = _globalController!.userId.value;
+    data['user_id'] = userIdInt;
 
     isLoading.value = true;
 

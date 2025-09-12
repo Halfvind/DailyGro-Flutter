@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../controllers/vendor_controller.dart';
+import '../controllers/stock_management_controller.dart';
+import '../repositories/vendor_repository.dart';
 import '../../../themes/app_colors.dart';
 
 class VendorStockManagement extends StatelessWidget {
@@ -8,7 +9,8 @@ class VendorStockManagement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<VendorController>();
+    Get.put(VendorRepository());
+    final controller = Get.put(StockManagementController());
     
     return Scaffold(
       appBar: AppBar(
@@ -22,17 +24,23 @@ class VendorStockManagement extends StatelessWidget {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStockSummary(),
-          _buildFilterTabs(),
-          Expanded(child: _buildProductList(controller)),
-        ],
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        return Column(
+          children: [
+            _buildStockSummary(controller),
+            _buildFilterTabs(controller),
+            Expanded(child: _buildProductList(controller)),
+          ],
+        );
+      }),
     );
   }
 
-  Widget _buildStockSummary() {
+  Widget _buildStockSummary(StockManagementController controller) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -47,13 +55,13 @@ class VendorStockManagement extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Obx(() => Row(
         children: [
-          Expanded(child: _buildSummaryCard('Total Products', '45', Icons.inventory, Colors.blue)),
-          Expanded(child: _buildSummaryCard('Low Stock', '8', Icons.warning, Colors.orange)),
-          Expanded(child: _buildSummaryCard('Out of Stock', '3', Icons.error, Colors.red)),
+          Expanded(child: _buildSummaryCard('Total Products', controller.totalProducts.value.toString(), Icons.inventory, Colors.blue)),
+          Expanded(child: _buildSummaryCard('Low Stock', controller.lowStockCount.value.toString(), Icons.warning, Colors.orange)),
+          Expanded(child: _buildSummaryCard('Out of Stock', controller.outOfStockCount.value.toString(), Icons.error, Colors.red)),
         ],
-      ),
+      )),
     );
   }
 
@@ -68,37 +76,49 @@ class VendorStockManagement extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterTabs() {
+  Widget _buildFilterTabs(StockManagementController controller) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Obx(() => Row(
         children: [
-          Expanded(child: _buildFilterChip('All', true)),
-          Expanded(child: _buildFilterChip('Low Stock', false)),
-          Expanded(child: _buildFilterChip('Out of Stock', false)),
+          Expanded(child: _buildFilterChip('All', 'all', controller)),
+          Expanded(child: _buildFilterChip('Low Stock', 'low', controller)),
+          Expanded(child: _buildFilterChip('Out of Stock', 'out_of_stock', controller)),
         ],
-      ),
+      )),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
+  Widget _buildFilterChip(String label, String type, StockManagementController controller) {
+    final isSelected = controller.selectedFilter.value == type;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4),
       child: FilterChip(
         label: Text(label),
         selected: isSelected,
-        onSelected: (selected) {},
+        onSelected: (selected) {
+          if (selected) {
+            controller.loadProducts(type: type);
+          }
+        },
         selectedColor: AppColors.primary.withValues(alpha: 0.2),
         checkmarkColor: AppColors.primary,
       ),
     );
   }
 
-  Widget _buildProductList(VendorController controller) {
-    return ListView.builder(
+  Widget _buildProductList(StockManagementController controller) {
+    return Obx(() => ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 10, // Mock data
+      itemCount: controller.products.length,
       itemBuilder: (context, index) {
+        final product = controller.products[index];
+        final stockColor = product['stock_quantity'] == 0 
+            ? Colors.red 
+            : product['stock_quantity'] <= 10 
+                ? Colors.orange 
+                : Colors.green;
+        
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -108,39 +128,43 @@ class VendorStockManagement extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
+                image: product['image'] != null 
+                    ? DecorationImage(
+                        image: NetworkImage('http://localhost/dailygro/uploads/products/${product['image']}'),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: const Icon(Icons.image, color: Colors.grey),
+              child: product['image'] == null ? const Icon(Icons.image, color: Colors.grey) : null,
             ),
-            title: Text('Product ${index + 1}'),
+            title: Text(product['name'] ?? 'Unknown Product'),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Price: \$${(index + 1) * 10}'),
-                Text('Stock: ${index < 3 ? 'Low (${index + 2})' : '${(index + 1) * 5}'}',
-                     style: TextStyle(color: index < 3 ? Colors.red : Colors.green)),
+                Text('Price: ₹${product['price'] ?? 0}'),
+                Text('Stock: ${product['stock_quantity'] ?? 0}',
+                     style: TextStyle(color: stockColor, fontWeight: FontWeight.w500)),
+                if (product['status'] != null)
+                  Text('Status: ${product['status']}', style: const TextStyle(fontSize: 12)),
               ],
             ),
             trailing: PopupMenuButton(
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit')),
                 const PopupMenuItem(value: 'stock', child: Text('Update Stock')),
                 const PopupMenuItem(value: 'disable', child: Text('Disable')),
               ],
-              onSelected: (value) => _handleProductAction(value, index),
+              onSelected: (value) => _handleProductAction(value, product, controller),
             ),
           ),
         );
       },
-    );
+    ));
   }
 
-  void _handleProductAction(String action, int index) {
+  void _handleProductAction(String action, Map<String, dynamic> product, StockManagementController controller) {
     switch (action) {
-      case 'edit':
-        Get.toNamed('/vendor/edit-product', arguments: index);
-        break;
       case 'stock':
-        _showStockUpdateDialog(index);
+        _showStockUpdateDialog(product, controller);
         break;
       case 'disable':
         Get.snackbar('Success', 'Product disabled');
@@ -148,11 +172,11 @@ class VendorStockManagement extends StatelessWidget {
     }
   }
 
-  void _showStockUpdateDialog(int index) {
-    final stockController = TextEditingController();
+  void _showStockUpdateDialog(Map<String, dynamic> product, StockManagementController controller) {
+    final stockController = TextEditingController(text: product['stock_quantity'].toString());
     Get.dialog(
       AlertDialog(
-        title: const Text('Update Stock'),
+        title: Text('Update Stock - ${product['name']}'),
         content: TextField(
           controller: stockController,
           keyboardType: TextInputType.number,
@@ -165,8 +189,9 @@ class VendorStockManagement extends StatelessWidget {
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
+              final newStock = int.tryParse(stockController.text) ?? 0;
               Get.back();
-              Get.snackbar('Success', 'Stock updated successfully');
+              controller.updateStock(product['product_id'], newStock);
             },
             child: const Text('Update'),
           ),

@@ -6,34 +6,18 @@ RewriteBase /dailygro/
 RewriteRule ^api/login$ login.php [L]
 RewriteRule ^api/logout$ auth/logout.php [L]
 RewriteRule ^api/user_registration$ user_registration.php [L]
-
-# User profile endpoints
-RewriteRule ^api/user/get_user_profile$ user/get_user_profile.php [L]
-RewriteRule ^api/users/get_user_profile$ user/get_user_profile.php [L]
-
-# Vendor profile endpoints
-RewriteRule ^api/vendor/get_vendor_profile$ vendor/get_vendor_profile.php [L]
-
-# Rider profile endpoints
-RewriteRule ^api/rider/get_rider_profile$ rider/get_rider_profile.php [L]
-
-# Address endpoints
-RewriteRule ^api/users/user_address$ users/user_address.php [L]
-
-# Categories endpoints
 RewriteRule ^api/categories$ categories.php [L]
-
-# Products endpoints
 RewriteRule ^api/products$ products.php [L]
 
-# Cart endpoints
-RewriteRule ^api/cart$ cart.php [L]
-
-# Orders endpoints
-RewriteRule ^api/orders$ orders.php [L]
-
-# Wishlist endpoints
-RewriteRule ^api/wishlist$ wishlist.php [L]
-
-# Order Tracking endpoints
-RewriteRule ^api/order_tracking$ order_tracking.php [L]
+# User profile endpoints
+RewriteRule ^api/users/get_user_profile$ users/get_user_profile.php [L]
+RewriteRule ^api/users/user_address$ users/user_address.php [L]
+RewriteRule ^api/users/cart$ users/cart.php [L]
+RewriteRule ^api/users/order_tracking$ users/order_tracking.php [L]
+RewriteRule ^api/users/orders$ users/orders.php [L]
+RewriteRule ^api/users/wishlist$ users/wishlist.php [L]
+RewriteRule ^api/users/coupons$ users/coupons.php [L]
+RewriteRule ^api/users/wallet$ users/wallet.php [L]
+RewriteRule ^api/users/wallet_transactions$ users/wallet_transactions.php [L]
+RewriteRule ^api/users/wallet_payment$ users/wallet_payment.php [L]
+RewriteRule ^api/users/product_detail$ users/product_detail.php [L]

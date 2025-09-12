@@ -1,24 +1,24 @@
 class CategoryModel {
-  final int categoryId;
-  final String name;
+  final int? categoryId;
+  final String? name;
   final String? image;
   final String? icon;
   final String? color;
-  final String status;
-  final int sortOrder;
-  final int productCount;
-  final DateTime createdAt;
+  final String? status;
+  final int? sortOrder;
+  final int? productCount;
+  final DateTime? createdAt;
 
   CategoryModel({
-    required this.categoryId,
-    required this.name,
+    this.categoryId,
+    this.name,
     this.image,
     this.icon,
     this.color,
-    required this.status,
-    required this.sortOrder,
-    required this.productCount,
-    required this.createdAt,
+    this.status,
+    this.sortOrder,
+    this.productCount,
+    this.createdAt,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
@@ -45,7 +45,7 @@ class CategoryModel {
       'status': status,
       'sort_order': sortOrder,
       'product_count': productCount,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 }
