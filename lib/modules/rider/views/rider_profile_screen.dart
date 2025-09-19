@@ -1,265 +1,225 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../CommonComponents/CommonWidgets/common_material_button.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
 import '../../../themes/app_colors.dart';
-import '../../../CommonComponents/CommonWidgets/common_textfield.dart';
 import '../controllers/rider_controller.dart';
 
 class RiderProfileScreen extends StatefulWidget {
+
+  const RiderProfileScreen({super.key});
+
   @override
-  _RiderProfileScreenState createState() => _RiderProfileScreenState();
+  State<RiderProfileScreen> createState() => _RiderProfileScreenState();
 }
 
 class _RiderProfileScreenState extends State<RiderProfileScreen> {
   final RiderController controller = Get.find<RiderController>();
-  
-  late TextEditingController nameController;
-  late TextEditingController phoneController;
-  late TextEditingController emailController;
-  late TextEditingController addressController;
-  late TextEditingController vehicleTypeController;
-  late TextEditingController vehicleNumberController;
-  late TextEditingController licenseController;
-  late TextEditingController bankAccountController;
-  late TextEditingController ifscController;
 
   @override
   void initState() {
     super.initState();
-    final profile = controller.profile;
-    nameController = TextEditingController(text: profile.name);
-    phoneController = TextEditingController(text: profile.phone);
-    emailController = TextEditingController(text: profile.email);
-    addressController = TextEditingController(text: profile.address);
-    vehicleTypeController = TextEditingController(text: profile.vehicleType);
-    vehicleNumberController = TextEditingController(text: profile.vehicleNumber);
-    licenseController = TextEditingController(text: profile.licenseNumber);
-    bankAccountController = TextEditingController(text: profile.bankAccount);
-    ifscController = TextEditingController(text: profile.ifscCode);
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    phoneController.dispose();
-    emailController.dispose();
-    addressController.dispose();
-    vehicleTypeController.dispose();
-    vehicleNumberController.dispose();
-    licenseController.dispose();
-    bankAccountController.dispose();
-    ifscController.dispose();
-    super.dispose();
+    Future.microtask(() => controller.fetchRiderProfile());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: const Text('Profile'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: Obx(() => SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Profile Picture Section
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage(controller.profile.profileImage),
+      body: Obx(() => controller.isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Profile Picture Section
+                Center(
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.grey[300],
+                        child: Icon(Icons.person, size: 50, color: Colors.grey[600]),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                            onPressed: () => Get.snackbar('Info', 'Camera functionality not implemented'),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
+                ),
+                const SizedBox(height: 24),
+
+                // Verification Status
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: controller.riderProfile.value?.verificationStatus == 'verified'
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        controller.riderProfile.value?.verificationStatus == 'verified'
+                            ? Icons.verified : Icons.pending,
+                        color: controller.riderProfile.value?.verificationStatus == 'verified'
+                            ? Colors.green : Colors.orange,
                       ),
-                      child: IconButton(
-                        icon: Icon(Icons.camera_alt, color: Colors.white, size: 20),
-                        onPressed: () => Get.snackbar('Info', 'Camera functionality not implemented'),
+                      SizedBox(width: 8),
+                      Text(
+                        controller.riderProfile.value?.verificationStatus == 'verified'
+                            ? 'Verified Rider' : 'Verification Pending',
+                        style: TextStyle(
+                          color: controller.riderProfile.value?.verificationStatus == 'verified'
+                              ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // Profile Information Cards
+                _buildInfoCard('Personal Information', [
+                  _buildInfoRow('Name', controller.riderProfile.value?.riderName ?? ''),
+                  _buildInfoRow('Email', controller.riderProfile.value?.riderEmail ?? ''),
+                  _buildInfoRow('Phone', controller.riderProfile.value?.contactNumber ?? ''),
+                ]),
+
+                SizedBox(height: 16),
+
+                _buildInfoCard('Vehicle Information', [
+                  _buildInfoRow('Vehicle Type', controller.riderProfile.value?.vehicleType ?? ''),
+                  _buildInfoRow('Vehicle Number', controller.riderProfile.value?.vehicleNumber ?? 'Not provided'),
+                  _buildInfoRow('License Number', controller.riderProfile.value?.licenseNumber ?? ''),
+                ]),
+
+      /*          SizedBox(height: 16),
+
+                _buildInfoCard('Statistics', [
+                  _buildInfoRow('Total Earnings', '\$${controller.riderProfile.value?.totalEarnings ?? 0}'),
+                  _buildInfoRow('Total Orders', '${controller.riderProfile.value?.totalOrders ?? 0}'),
+                  _buildInfoRow('Total Deliveries', '${controller.riderProfile.value?.totalDeliveries ?? 0}'),
+                  _buildInfoRow('Rating', '${controller.riderProfile.value?.rating ?? 0} ⭐'),
+                ]),*/
+
+                SizedBox(height: 32),
+
+                // Action Buttons
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Get.snackbar('Info', 'Edit profile functionality not implemented'),
+                    icon: Icon(Icons.edit),
+                    label: Text('Edit Profile'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Verification Status
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: controller.profile.isVerified 
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    controller.profile.isVerified ? Icons.verified : Icons.pending,
-                    color: controller.profile.isVerified ? Colors.green : Colors.orange,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    controller.profile.isVerified ? 'Verified Rider' : 'Verification Pending',
-                    style: TextStyle(
-                      color: controller.profile.isVerified ? Colors.green : Colors.orange,
-                      fontWeight: FontWeight.bold,
+                ),
+                SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Get.snackbar('Info', 'Change password functionality not implemented'),
+                    icon: Icon(Icons.lock),
+                    label: Text('Change Password'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Personal Information
-            _buildSectionTitle('Personal Information'),
-            CommonTextField(
-              controller: nameController,
-              labelText: 'Full Name',
-              prefixIcon: const Icon(Icons.person,)
-            ),
-            SizedBox(height: 16),
-            CommonTextField(
-              controller: phoneController,
-              labelText: 'Phone Number',
-              prefixIcon:const Icon(Icons.phone,) ,
-              keyboardType: TextInputType.phone,
-            ),
-            SizedBox(height: 16),
-            CommonTextField(
-              controller: emailController,
-              labelText: 'Email',
-              prefixIcon:const Icon(Icons.email,),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            SizedBox(height: 16),
-            CommonTextField(
-              controller: addressController,
-              labelText: 'Address',
-              prefixIcon:const Icon(Icons.location_on,),
-              maxLines: 2,
-            ),
-            SizedBox(height: 24),
-
-            // Vehicle Information
-            _buildSectionTitle('Vehicle Information'),
-            CommonTextField(
-              controller: vehicleTypeController,
-              labelText: 'Vehicle Type',
-              prefixIcon:const Icon(Icons.motorcycle,),
-            ),
-            const SizedBox(height: 16),
-            CommonTextField(
-              controller: vehicleNumberController,
-              labelText: 'Vehicle Number',
-              prefixIcon: const Icon(Icons.confirmation_number,),
-            ),
-            const SizedBox(height: 16),
-            CommonTextField(
-              controller: licenseController,
-              labelText: 'License Number',
-              prefixIcon:  const Icon(Icons.card_membership,)
-            ),
-            SizedBox(height: 24),
-
-            // Bank Information
-            _buildSectionTitle('Bank Information'),
-            CommonTextField(
-              controller: bankAccountController,
-              labelText: 'Bank Account Number',
-              prefixIcon: const Icon(Icons.account_balance,) ,
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            CommonTextField(
-              controller: ifscController,
-              labelText: 'IFSC Code',
-              prefixIcon: const Icon(Icons.code,) ,
-            ),
-            const SizedBox(height: 32),
-
-            // Action Buttons
-            SizedBox(
-              width: double.infinity,
-              child: CommonButton(
-                text: 'Update Profile',
-                onPressed: _updateProfile,
-              ),
-            ),
-            SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Get.snackbar('Info', 'Change password functionality not implemented'),
-                icon: Icon(Icons.lock),
-                label: Text('Change Password'),
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
                 ),
-              ),
-            ),
-            SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Get.snackbar('Support', 'Contact admin at support@dailygro.com'),
-                icon: Icon(Icons.help),
-                label: Text('Help & Support'),
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Get.snackbar('Support', 'Contact admin at support@dailygro.com'),
+                    icon: Icon(Icons.help),
+                    label: Text('Help & Support'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.red),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const LogoutButton(),
+                ),
+              ],
             ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.red),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const LogoutButton(),
-            ),
-          ],
-        ),
-      )),
+          ),
+      ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.primary,
+  Widget _buildInfoCard(String title, List<Widget> children) {
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 12),
+            ...children,
+          ],
         ),
       ),
     );
   }
 
-  void _updateProfile() {
-    controller.updateProfile(
-      name: nameController.text,
-      phone: phoneController.text,
-      email: emailController.text,
-      address: addressController.text,
-      vehicleType: vehicleTypeController.text,
-      vehicleNumber: vehicleNumberController.text,
-      licenseNumber: licenseController.text,
-      bankAccount: bankAccountController.text,
-      ifscCode: ifscController.text,
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w400),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -11,9 +11,20 @@ class GlobalController extends GetxController {
   final _isLoggedIn = false.obs;
   final userId = 0.obs;
   final vendorId = 0.obs;
+  final riderId = 0.obs;
   final role = ''.obs;
 
-  final ApiClient _apiClient = Get.find<ApiClient>();
+  ApiClient? _apiClient;
+  
+  @override
+  void onInit() {
+    super.onInit();
+    try {
+      _apiClient = Get.find<ApiClient>();
+    } catch (e) {
+      debugPrint('ApiClient not found: $e');
+    }
+  }
 
   String get currentUserRole => _currentUserRole.value;
   bool get isLoggedIn => _isLoggedIn.value;
@@ -30,9 +41,11 @@ class GlobalController extends GetxController {
     // Convert IDs to int safely
     int userIdInt = int.tryParse(userData['profile']['user_id'].toString()) ?? 0;
     int vendorIdInt = int.tryParse(userData['role_data']['vendor_id'].toString()) ?? 0;
+    int riderIdInt = int.tryParse(userData['role_data']['rider_id'].toString()) ?? 0;
 
     userId.value = userIdInt;
     vendorId.value = vendorIdInt;
+    riderId.value = riderIdInt;
     role.value = userData['user']['role'].toString();
     _isLoggedIn.value = true;
 
@@ -40,6 +53,7 @@ class GlobalController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', userIdInt);
     await prefs.setInt('vendor_id', vendorIdInt);
+    await prefs.setInt('rider_id', riderIdInt);
     await prefs.setString('role', role.value);
     await prefs.setString('user_role', _currentUserRole.value);
     await prefs.setBool('is_logged_in', true);
@@ -47,16 +61,18 @@ class GlobalController extends GetxController {
     // Verification print
     final savedUserId = prefs.getInt('user_id') ?? 0;
     final savedVendorId = prefs.getInt('vendor_id') ?? 0;
+    final savedRiderId = prefs.getInt('rider_id') ?? 0;
     final savedRole = prefs.getString('role') ?? 'user';
     final savedIsLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
     debugPrint('🆔 Saved User ID: $savedUserId');
     debugPrint('👤 Saved Vendor ID: $savedVendorId');
+    debugPrint('👤 Saved Rider ID: $savedRiderId');
     debugPrint('🎭 Saved Role: $savedRole');
     debugPrint('✅ Saved Is Logged In: $savedIsLoggedIn');
   }
 
-  void checkAutoLogin() async {
+   checkAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     debugPrint("✅ SharedPreferences instance loaded");
 
@@ -106,8 +122,10 @@ class GlobalController extends GetxController {
       debugPrint('🚪 Starting logout process...');
       debugPrint('🎭 Current Role: ${_currentUserRole.value}');
 
-      // Call logout API
-      await _apiClient.post(ApiEndpoints.logout, {'user_id': ""});
+      // Call logout API if available
+      if (_apiClient != null) {
+        await _apiClient!.post(ApiEndpoints.logout, {'user_id': ""});
+      }
 
       debugPrint('🗑️ Clearing local variables and SharedPreferences');
       final prefs = await SharedPreferences.getInstance();

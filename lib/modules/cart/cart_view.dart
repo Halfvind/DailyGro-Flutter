@@ -145,7 +145,7 @@ class _CartViewState extends State<CartView> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '₹${cartItem.price.toStringAsFixed(0)}',
+                                    '₹${cartItem.price}',
                                     style: TextStyle(
                                       fontSize: AppSizes.fontL,
                                       fontWeight: FontWeight.bold,
@@ -268,7 +268,7 @@ class _CartViewState extends State<CartView> {
                         ),
                       ),
                       Text(
-                        '₹${controller.totalAmount.toStringAsFixed(0)}',
+                        '₹${controller.totalAmount}',
                         style: TextStyle(
                           fontSize: AppSizes.fontL,
                           fontWeight: FontWeight.bold,

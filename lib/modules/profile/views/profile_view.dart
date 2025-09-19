@@ -1,25 +1,31 @@
-import 'wishlist_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+// Import your actual classes
 import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
-import '../../home/controller/home_controller.dart';
+import '../../../data/api/services/profile_api_service.dart';
 import '../../home/views/widgets/wallet_summary.dart';
 import '../controllers/profile_controller.dart';
 import 'personal_info_view.dart';
 import 'address_list_view.dart';
 import 'help_support_view.dart';
 import 'about_view.dart';
+import 'wishlist_view.dart';
 
-class ProfileView extends GetView<HomeController> {
+class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Initialize ProfileApiService first
+
+    // Then initialize the ProfileController
     final controller = Get.put(ProfileController(), permanent: false);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: const Text('Profile'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
@@ -37,7 +43,7 @@ class ProfileView extends GetView<HomeController> {
                 borderRadius: BorderRadius.circular(AppSizes.radius(16)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -49,15 +55,16 @@ class ProfileView extends GetView<HomeController> {
                   CircleAvatar(
                     radius: AppSizes.width(35),
                     backgroundColor: Colors.green,
-                    child: Text(
-                      controller.userProfile.value?.name[0].toUpperCase() ?? "",
-                      // controller.userName.value[0].toUpperCase(),
+                    child: Obx(() => Text(
+                      (controller.userProfile.value?.name.isNotEmpty ?? false)
+                          ? controller.userProfile.value!.name[0].toUpperCase()
+                          : '',
                       style: TextStyle(
                         fontSize: AppSizes.fontXXL,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                    ),
+                    )),
                   ),
                   SizedBox(width: AppSizes.width(16)),
                   Expanded(
@@ -65,8 +72,8 @@ class ProfileView extends GetView<HomeController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Obx(
-                          () => Text(
-                            controller.userProfile.value?.name ?? "",
+                              () => Text(
+                            controller.userProfile.value?.name ?? "No Name",
                             style: TextStyle(
                               fontSize: AppSizes.fontXL,
                               fontWeight: FontWeight.bold,
@@ -75,8 +82,8 @@ class ProfileView extends GetView<HomeController> {
                         ),
                         SizedBox(height: AppSizes.height(4)),
                         Obx(
-                          () => Text(
-                            controller.userProfile.value?.address ?? "",
+                              () => Text(
+                            controller.userProfile.value?.address ?? "No Address",
                             style: TextStyle(
                               fontSize: AppSizes.fontM,
                               color: Colors.grey[600],
@@ -87,11 +94,13 @@ class ProfileView extends GetView<HomeController> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
-                    icon: Icon(
+                    onPressed: () {
+                      // Add edit action here
+                    },
+                    icon: const Icon(
                       Icons.edit,
                       color: Colors.green,
-                      size: AppSizes.fontXL,
+                      size: 24,
                     ),
                   ),
                 ],
@@ -112,7 +121,7 @@ class ProfileView extends GetView<HomeController> {
                 borderRadius: BorderRadius.circular(AppSizes.radius(16)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -125,21 +134,23 @@ class ProfileView extends GetView<HomeController> {
                     icon: Icons.person_outline,
                     title: 'Personal Information',
                     subtitle: 'Update your details',
-                    onTap: () => Get.to(() => PersonalInfoView()),
+                    onTap: () => Get.to(() => const PersonalInfoView()),
                   ),
                   _buildDivider(),
                   _buildProfileOption(
                     icon: Icons.location_on_outlined,
                     title: 'Delivery Address',
                     subtitle: 'Manage your addresses',
-                    onTap: () => Get.to(() => AddressListView()),
+                    onTap: () => Get.to(() => const AddressListView()),
                   ),
                   _buildDivider(),
                   _buildProfileOption(
                     icon: Icons.payment_outlined,
                     title: 'Payment Methods',
                     subtitle: 'Cards, UPI, Wallet',
-                    onTap: () {},
+                    onTap: () {
+                      // Implement Payment Methods Screen
+                    },
                   ),
                   _buildDivider(),
                   _buildProfileOption(
@@ -147,28 +158,29 @@ class ProfileView extends GetView<HomeController> {
                     title: 'Your Wishlists',
                     subtitle: 'All Favourites',
                     onTap: () => Get.to(() => const WishlistView()),
-
                   ),
                   _buildDivider(),
                   _buildProfileOption(
                     icon: Icons.notifications_outlined,
                     title: 'Notifications',
                     subtitle: 'Manage preferences',
-                    onTap: () {},
+                    onTap: () {
+                      // Implement Notifications Settings
+                    },
                   ),
                   _buildDivider(),
                   _buildProfileOption(
                     icon: Icons.help_outline,
                     title: 'Help & Support',
                     subtitle: 'FAQs, Contact us',
-                    onTap: () => Get.to(() => HelpSupportView()),
+                    onTap: () => Get.to(() => const HelpSupportView()),
                   ),
                   _buildDivider(),
                   _buildProfileOption(
                     icon: Icons.info_outline,
                     title: 'About',
                     subtitle: 'App version, Terms',
-                    onTap: () => Get.to(() => AboutView()),
+                    onTap: () => Get.to(() => const AboutView()),
                   ),
                 ],
               ),
@@ -183,7 +195,7 @@ class ProfileView extends GetView<HomeController> {
                 borderRadius: BorderRadius.circular(AppSizes.radius(16)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    color: Colors.grey.withOpacity(0.1),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 2),
@@ -210,10 +222,10 @@ class ProfileView extends GetView<HomeController> {
       leading: Container(
         padding: EdgeInsets.all(AppSizes.width(8)),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.1),
+          color: Colors.green.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppSizes.radius(8)),
         ),
-        child: Icon(icon, color: Colors.green, size: AppSizes.fontXL),
+        child: Icon(icon, color: Colors.green, size: 24),
       ),
       title: Text(
         title,
@@ -223,10 +235,10 @@ class ProfileView extends GetView<HomeController> {
         subtitle,
         style: TextStyle(fontSize: AppSizes.fontS, color: Colors.grey[600]),
       ),
-      trailing: Icon(
+      trailing: const Icon(
         Icons.arrow_forward_ios,
-        size: AppSizes.fontL,
-        color: Colors.grey[400],
+        size: 16,
+        color: Colors.grey,
       ),
       onTap: onTap,
     );

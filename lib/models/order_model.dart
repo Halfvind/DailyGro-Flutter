@@ -161,22 +161,35 @@ class StatusStep {
 class TrackingHistory {
   final String status;
   final String message;
-  final String location;
+  final String? location;
+  final double? latitude;
+  final double? longitude;
   final DateTime timestamp;
 
   TrackingHistory({
     required this.status,
     required this.message,
-    required this.location,
+    this.location,
+    this.latitude,
+    this.longitude,
     required this.timestamp,
   });
 
   factory TrackingHistory.fromJson(Map<String, dynamic> json) {
+    double? parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return double.tryParse(value);
+      if (value is num) return value.toDouble();
+      return null;
+    }
+
     return TrackingHistory(
       status: json['status'] ?? '',
       message: json['message'] ?? '',
-      location: json['location'] ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+      location: json['location'],
+      latitude: parseDouble(json['latitude']),
+      longitude: parseDouble(json['longitude']),
+      timestamp: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );
   }
 }

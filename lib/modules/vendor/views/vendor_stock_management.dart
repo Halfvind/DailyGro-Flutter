@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/stock_management_controller.dart';
 import '../repositories/vendor_repository.dart';
+import '../../../data/api/api_client.dart';
 import '../../../themes/app_colors.dart';
 
 class VendorStockManagement extends StatelessWidget {
@@ -9,11 +10,18 @@ class VendorStockManagement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(VendorRepository());
+    // Initialize dependencies in correct order
+    if (!Get.isRegistered<ApiClient>()) {
+      Get.put(ApiClient());
+    }
+    if (!Get.isRegistered<VendorRepository>()) {
+      Get.put(VendorRepository());
+    }
     final controller = Get.put(StockManagementController());
     
     return Scaffold(
       appBar: AppBar(
+
         title: const Text('Stock Management'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,

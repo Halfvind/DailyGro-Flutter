@@ -1,226 +1,202 @@
+import 'package:dailygro/modules/rider/models/rider_order_model.dart';
 import 'package:get/get.dart';
-import '../models/rider_models.dart';
-import '../data/rider_dummy_data.dart';
 import '../../../controllers/integrated_order_controller.dart';
 import '../../../CommonComponents/controllers/global_controller.dart';
+import '../../../data/api/api_client.dart';
+
+import '../models/rider_profile_model.dart';
+
 
 class RiderController extends GetxController {
-  // Profile
-  final _profile = RiderDummyData.riderProfile.obs;
-  RiderProfile get profile => _profile.value;
+  final ApiClient apiClient = Get.find<ApiClient>();
+  
+  final Rx<RiderProfileModel?> riderProfile = Rx<RiderProfileModel?>(null);
+  final availabilityStatus = 'offline'.obs;
+  final isUpdatingStatus = false.obs;
+  final _isLoading = false.obs;
+  final activeOrders = <RiderOrderModel>[].obs;
+  final completedOrders = <RiderOrderModel>[].obs;
+  final Rx<RiderOrderModel?> selectedOrder = Rx<RiderOrderModel?>(null);
+  final trackingHistory = <Map<String, dynamic>>[].obs;
+  
+  bool get isOnline => availabilityStatus.value == 'available';
+  bool get isLoading => _isLoading.value;
 
-  // Online/Offline status
-  final _isOnline = true.obs;
-  bool get isOnline => _isOnline.value;
-
-  // Orders from integrated system
-  List<dynamic> get availableOrders {
-    final integratedController = Get.find<IntegratedOrderController>();
-    return integratedController.getAvailableRiderOrders()
-        .map((order) => {
-          'id': order.id,
-          'orderNumber': order.orderNumber,
-          'customerName': 'Customer',
-          'customerPhone': '+1234567890',
-          'customerAddress': order.deliveryAddress,
-          'vendorName': 'Vendor Store',
-          'vendorAddress': 'Vendor Location',
-          'items': order.items,
-          'totalAmount': order.totalAmount,
-          'deliveryFee': 2.99,
-          'status': order.status,
-          'createdAt': order.orderDate,
-        }).toList();
+  void fetchRiderOrders() async {
+    try {
+      _isLoading.value = true;
+      final riderId = riderProfile.value?.riderId ?? 0;
+      final response = await apiClient.get('rider/view_orders?rider_id=$riderId');
+      
+      if (response.body['status'] == 'success') {
+        if (response.body['active_orders'] != null) {
+          activeOrders.value = (response.body['active_orders'] as List)
+              .map((order) => RiderOrderModel.fromJson(order))
+              .toList();
+        }
+        if (response.body['completed_orders'] != null) {
+          completedOrders.value = (response.body['completed_orders'] as List)
+              .map((order) => RiderOrderModel.fromJson(order))
+              .toList();
+        }
+      }
+    } catch (e) {
+      print('Error fetching rider orders: $e');
+    } finally {
+      _isLoading.value = false;
+    }
   }
   
-  List<dynamic> get myOrders {
-    final integratedController = Get.find<IntegratedOrderController>();
-    return integratedController.getRiderOrders(profile.id)
-        .map((order) => {
-          'id': order.id,
-          'orderNumber': order.orderNumber,
-          'customerName': 'Customer',
-          'customerPhone': '+1234567890',
-          'customerAddress': order.deliveryAddress,
-          'vendorName': 'Vendor Store',
-          'vendorAddress': 'Vendor Location',
-          'items': order.items,
-          'totalAmount': order.totalAmount,
-          'deliveryFee': 2.99,
-          'status': order.status,
-          'createdAt': order.orderDate,
-        }).toList();
+  void fetchOrderDetails(int orderId) async {
+    try {
+      _isLoading.value = true;
+      final riderId = riderProfile.value?.riderId ?? 0;
+      final response = await apiClient.get('rider/view_orders?rider_id=$riderId&order_id=$orderId');
+      
+      if (response.body['status'] == 'success') {
+        if (response.body['order'] != null) {
+          selectedOrder.value = RiderOrderModel.fromJson(response.body['order']);
+        }
+
+        if (response.body['tracking_history'] != null) {
+          trackingHistory.value = List<Map<String, dynamic>>.from(response.body['tracking_history']);
+        }
+      }
+    } catch (e) {
+      print('Error fetching order details: $e');
+    } finally {
+      _isLoading.value = false;
+    }
   }
-
-  // Earnings
-  final _earnings = <RiderEarnings>[].obs;
-  final _withdrawals = <WithdrawalRequest>[].obs;
-  List<RiderEarnings> get earnings => _earnings;
-  List<WithdrawalRequest> get withdrawals => _withdrawals;
-
-  // Loading states
-  final _isLoading = false.obs;
-  bool get isLoading => _isLoading.value;
+  
+  void updateOrderStatus(int orderId, String status, {String? notes, String? location}) async {
+    try {
+      final riderId = riderProfile.value?.riderId ?? 0;
+      final response = await apiClient.post('rider/view_orders', {
+        'rider_id': riderId,
+        'order_id': orderId,
+        'status': status,
+        if (notes != null) 'notes': notes,
+        if (location != null) 'location': location,
+      });
+      
+      if (response.body['status'] == 'success') {
+        Get.snackbar('Success', 'Order status updated successfully');
+        fetchRiderOrders();
+        if (selectedOrder.value?.orderId == orderId) {
+          fetchOrderDetails(orderId);
+        }
+      } else {
+        Get.snackbar('Error', response.body['message'] ?? 'Failed to update order status');
+      }
+    } catch (e) {
+      print('Error updating order status: $e');
+      Get.snackbar('Error', 'Failed to update order status');
+    }
+  }
 
   @override
   void onInit() {
     super.onInit();
-    loadData();
+    fetchRiderProfile();
   }
-
-  void loadData() {
-    _earnings.value = List.from(RiderDummyData.earnings);
-    _withdrawals.value = List.from(RiderDummyData.withdrawals);
+  
+  void fetchRiderProfile() async {
+    try {
+      _isLoading.value = true;
+      final globalController = Get.find<GlobalController>();
+      final userId = globalController.userId;
+      final response = await apiClient.get('rider/get_rider_profile?id=$userId');
+      if (response.body["status"] == 'success') {
+        riderProfile.value = RiderProfileModel.fromJson(response.body['user_profile']);
+        availabilityStatus.value = response.body['user_profile']['availability_status'] ?? 'offline';
+      }
+    } catch (e) {
+      print('Error fetching rider profile: $e');
+    } finally {
+      _isLoading.value = false;
+    }
   }
-
-  // Profile Management
-  void updateProfile({
-    String? name,
-    String? phone,
-    String? email,
-    String? address,
-    String? vehicleType,
-    String? vehicleNumber,
-    String? licenseNumber,
-    String? bankAccount,
-    String? ifscCode,
-  }) {
-    _profile.value = RiderProfile(
-      id: profile.id,
-      name: name ?? profile.name,
-      phone: phone ?? profile.phone,
-      email: email ?? profile.email,
-      address: address ?? profile.address,
-      vehicleType: vehicleType ?? profile.vehicleType,
-      vehicleNumber: vehicleNumber ?? profile.vehicleNumber,
-      licenseNumber: licenseNumber ?? profile.licenseNumber,
-      bankAccount: bankAccount ?? profile.bankAccount,
-      ifscCode: ifscCode ?? profile.ifscCode,
-      profileImage: profile.profileImage,
-      idProof: profile.idProof,
-      isOnline: profile.isOnline,
-      isVerified: profile.isVerified,
-    );
-    Get.snackbar('Success', 'Profile updated successfully');
-  }
-
-  // Online/Offline Toggle
-  void toggleOnlineStatus() {
-    _isOnline.value = !_isOnline.value;
-    _profile.value = RiderProfile(
-      id: profile.id,
-      name: profile.name,
-      phone: profile.phone,
-      email: profile.email,
-      address: profile.address,
-      vehicleType: profile.vehicleType,
-      vehicleNumber: profile.vehicleNumber,
-      licenseNumber: profile.licenseNumber,
-      bankAccount: profile.bankAccount,
-      ifscCode: profile.ifscCode,
-      profileImage: profile.profileImage,
-      idProof: profile.idProof,
-      isOnline: _isOnline.value,
-      isVerified: profile.isVerified,
-    );
-    Get.snackbar('Status Updated', 
-        _isOnline.value ? 'You are now online' : 'You are now offline');
-  }
-
-  // Order Management - integrated
-  void acceptOrder(String orderId) {
-    final integratedController = Get.find<IntegratedOrderController>();
-    if (integratedController.riderAcceptOrder(orderId, profile.id)) {
-      Get.snackbar('Order Accepted', 'Order accepted successfully');
+  
+  void updateAvailabilityStatus(String status) async {
+    try {
+      isUpdatingStatus.value = true;
+      final globalController = Get.find<GlobalController>();
+      final riderId = riderProfile.value?.riderId ?? globalController.userId;
+      print('RIDER ID >>>>$riderId AND STATUS >>>>$status');
+      final response = await apiClient.post('rider/rider_status', {
+        'rider_id': riderId,
+        'availability_status': status,
+      });
+      if (response.body["status"] == 'success') {
+        // Update local state immediately for better UX
+        availabilityStatus.value = status;
+        if (riderProfile.value != null) {
+          riderProfile.value = RiderProfileModel(
+            riderId: riderProfile.value!.riderId,
+            riderName: riderProfile.value!.riderName,
+            riderEmail: riderProfile.value!.riderEmail,
+            contactNumber: riderProfile.value!.contactNumber,
+            vehicleType: riderProfile.value!.vehicleType,
+            vehicleNumber: riderProfile.value!.vehicleNumber,
+            licenseNumber: riderProfile.value!.licenseNumber,
+            verificationStatus: riderProfile.value!.verificationStatus,
+            rating: riderProfile.value!.rating,
+            availabilityStatus: status,
+            totalDeliveries: riderProfile.value!.totalDeliveries,
+            totalOrders: riderProfile.value!.totalOrders,
+            totalEarnings: riderProfile.value!.totalEarnings,
+            createdAt: riderProfile.value!.createdAt,
+          );
+        }
+        Get.snackbar('Status Updated', 
+            status == 'available' ? 'You are now online' : 'You are now offline');
+      }
+    } catch (e) {
+      print('Error updating availability status: $e');
+      Get.snackbar('Error', 'Failed to update status');
+    } finally {
+      isUpdatingStatus.value = false;
     }
   }
 
-  void rejectOrder(String orderId) {
-    Get.snackbar('Order Rejected', 'Order rejected');
+
+
+  // Online/Offline Toggle
+  void toggleOnlineStatus() {
+    final newStatus = availabilityStatus.value == 'available' ? 'offline' : 'available';
+    updateAvailabilityStatus(newStatus);
   }
 
-  void markOrderPicked(String orderId) {
-    final integratedController = Get.find<IntegratedOrderController>();
-    if (integratedController.riderPickupOrder(orderId)) {
-      Get.snackbar('Order Picked', 'Order marked as picked up');
+  void acceptOrder(String orderId) {
+    try {
+      final integratedController = Get.find<IntegratedOrderController>();
+      final riderId = riderProfile.value?.riderId.toString() ?? '0';
+      if (integratedController.riderAcceptOrder(orderId, riderId)) {
+        Get.snackbar('Order Accepted', 'Order accepted successfully');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to accept order');
     }
   }
 
   void markOrderDelivered(String orderId) {
-    final integratedController = Get.find<IntegratedOrderController>();
-    if (integratedController.riderDeliverOrder(orderId)) {
-      // Add earnings
-      _earnings.add(RiderEarnings(
-        id: 'earn_${DateTime.now().millisecondsSinceEpoch}',
-        orderId: orderId,
-        amount: 2.99,
-        date: DateTime.now(),
-        type: 'delivery',
-      ));
-      Get.snackbar('Order Delivered', 'Order delivered successfully');
+    try {
+      final integratedController = Get.find<IntegratedOrderController>();
+      if (integratedController.riderDeliverOrder(orderId)) {
+        Get.snackbar('Order Delivered', 'Order delivered successfully');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to mark order as delivered');
     }
-  }
-
-  // Earnings
-  double get todayEarnings {
-    final today = DateTime.now();
-    return _earnings
-        .where((e) => 
-            e.date.year == today.year &&
-            e.date.month == today.month &&
-            e.date.day == today.day)
-        .fold(0.0, (sum, e) => sum + e.amount);
-  }
-
-  double get weeklyEarnings {
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    return _earnings
-        .where((e) => e.date.isAfter(weekStart))
-        .fold(0.0, (sum, e) => sum + e.amount);
-  }
-
-  double get monthlyEarnings {
-    final now = DateTime.now();
-    return _earnings
-        .where((e) => 
-            e.date.year == now.year &&
-            e.date.month == now.month)
-        .fold(0.0, (sum, e) => sum + e.amount);
-  }
-
-  double get totalEarnings {
-    return _earnings.fold(0.0, (sum, e) => sum + e.amount);
-  }
-
-  // Withdrawals
-  void requestWithdrawal(double amount) {
-    if (amount > totalEarnings) {
-      Get.snackbar('Error', 'Insufficient balance');
-      return;
-    }
-
-    final withdrawal = WithdrawalRequest(
-      id: 'withdraw_${DateTime.now().millisecondsSinceEpoch}',
-      amount: amount,
-      requestDate: DateTime.now(),
-      status: 'pending',
-      bankAccount: '****${profile.bankAccount.substring(profile.bankAccount.length - 4)}',
-    );
-
-    _withdrawals.insert(0, withdrawal);
-    Get.snackbar('Withdrawal Requested', 
-        'Withdrawal request of \$${amount.toStringAsFixed(2)} submitted');
-  }
-  
-  @override
-  void onClose() {
-    // Clean up when controller is disposed
-    super.onClose();
   }
   
   void logout() {
-    final globalController = Get.find<GlobalController>();
-    globalController.logout();
+    try {
+      final globalController = Get.find<GlobalController>();
+      globalController.logout();
+    } catch (e) {
+      print('Error during logout: $e');
+    }
   }
 }

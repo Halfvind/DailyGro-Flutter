@@ -14,17 +14,17 @@ try {
     $stmt = $pdo->prepare("SELECT user_id FROM vendors WHERE vendor_id = ?");
     $stmt->execute([$vendor_id]);
     $vendor = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$vendor) {
         echo json_encode(['status' => 'error', 'message' => 'Vendor not found']);
         exit;
     }
-    
+
     // Get or create wallet
     $stmt = $pdo->prepare("SELECT * FROM wallet WHERE user_id = ?");
     $stmt->execute([$vendor['user_id']]);
     $wallet = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$wallet) {
         $stmt = $pdo->prepare("INSERT INTO wallet (user_id, balance) VALUES (?, 0.00)");
         $stmt->execute([$vendor['user_id']]);
@@ -34,16 +34,16 @@ try {
         $wallet_id = $wallet['wallet_id'];
         $balance = $wallet['balance'];
     }
-    
+
     // Get recent transactions
-    $stmt = $pdo->prepare("SELECT wt.*, o.order_number 
-                          FROM wallet_transactions wt 
+    $stmt = $pdo->prepare("SELECT wt.*, o.order_number
+                          FROM wallet_transactions wt
                           LEFT JOIN orders o ON wt.order_id = o.order_id
-                          WHERE wt.wallet_id = ? 
+                          WHERE wt.wallet_id = ?
                           ORDER BY wt.created_at DESC LIMIT 20");
     $stmt->execute([$wallet_id]);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     echo json_encode([
         'status' => 'success',
         'wallet_id' => $wallet_id,

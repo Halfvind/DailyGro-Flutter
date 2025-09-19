@@ -66,7 +66,7 @@ class WalletSummary extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Obx(() => Text(
-                '₹${walletController?.balance.toStringAsFixed(0) ?? '0'}',
+                '₹${walletController?.balance}',
                 style: TextStyle(
                   fontSize: AppSizes.fontXXXL,
                   fontWeight: FontWeight.bold,
@@ -282,7 +282,7 @@ class WalletSummary extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${isCredit ? '+' : '-'}₹${transaction.amount.toStringAsFixed(0)}',
+                            '${isCredit ? '+' : '-'}₹${transaction.amount}',
                             style: TextStyle(
                               fontSize: AppSizes.fontL,
                               fontWeight: FontWeight.bold,

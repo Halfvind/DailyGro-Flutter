@@ -5,7 +5,12 @@ class SharedPrefHelper {
 
   // Initialize SharedPreferences once
   static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+    try {
+      _prefs = await SharedPreferences.getInstance();
+      print('SharedPreferences initialized successfully');
+    } catch (e) {
+      print('Failed to initialize SharedPreferences: $e');
+    }
   }
 
   // Set String value

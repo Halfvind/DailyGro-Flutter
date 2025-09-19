@@ -15,7 +15,7 @@ class VendorDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<VendorController>();
+    final controller = Get.put(VendorController());
 
     
     return Scaffold(

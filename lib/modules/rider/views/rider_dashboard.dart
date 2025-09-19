@@ -1,175 +1,213 @@
+import 'package:dailygro/modules/rider/views/rider_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../themes/app_colors.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
 import '../controllers/rider_controller.dart';
-import 'rider_orders_screen.dart';
-import 'rider_earnings_screen.dart';
-import 'rider_profile_screen.dart';
 
 class RiderDashboard extends StatelessWidget {
-  final RiderController controller = Get.put(RiderController());
-
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(RiderController());
+    
+    // Fetch profile data when screen loads
+    Future.microtask(() => controller.fetchRiderProfile());
+    
     return Scaffold(
       appBar: AppBar(
         title: Text('Rider Dashboard'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        actions: [
+        /*actions: [
           Obx(() => Switch(
             value: controller.isOnline,
             onChanged: (_) => controller.toggleOnlineStatus(),
             activeColor: Colors.green,
           )),
           LogoutButton(),
-        ],
+        ],*/
+
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Status Card
-            Obx(() => Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage('assets/images/rider_avatar.png'),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            controller.profile.name,
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(controller.profile.phone),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.circle,
-                                color: controller.isOnline ? Colors.green : Colors.red,
-                                size: 12,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                controller.isOnline ? 'Online' : 'Offline',
-                                style: TextStyle(
-                                  color: controller.isOnline ? Colors.green : Colors.red,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )),
-            SizedBox(height: 20),
-
-            // Quick Stats
-            Obx(() => Column(
+      body: Obx(() => controller.isLoading
+        ? Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Today Earnings',
-                        '\$${controller.todayEarnings.toStringAsFixed(2)}',
-                        Icons.today,
-                        Colors.green,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Active Orders',
-                        '${controller.myOrders.where((o) => o['status'] != 'delivered').length}',
-                        Icons.delivery_dining,
-                        Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        'Available Orders',
-                        '${controller.availableOrders.length}',
-                        Icons.assignment,
-                        Colors.blue,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        'Total Earnings',
-                        '\$${controller.totalEarnings.toStringAsFixed(2)}',
-                        Icons.account_balance_wallet,
-                        Colors.purple,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildStatusCard(controller),
+                SizedBox(height: 20),
+                _buildStatsSection(controller),
+                SizedBox(height: 30),
+                _buildQuickActions(),
               ],
-            )),
-            SizedBox(height: 30),
-
-            // Quick Actions
-            Text(
-              'Quick Actions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.5,
+          ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(RiderController controller) {
+    return Obx(() => Card(
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: Colors.grey[300],
+              child: Icon(Icons.person, size: 30),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    controller.riderProfile.value?.riderName ?? 'Rider',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(controller.riderProfile.value?.contactNumber ?? ''),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.circle,
+                        color: controller.isOnline ? Colors.green : Colors.red,
+                        size: 12,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        controller.isOnline ? 'Available' : 'Offline',
+                        style: TextStyle(
+                          color: controller.isOnline ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Column(
               children: [
-                _buildActionCard(
-                  'View Orders',
-                  Icons.list_alt,
-                  Colors.blue,
-                  () => Get.to(() => RiderOrdersScreen()),
+                Switch(
+                  value: controller.isOnline,
+                  onChanged: controller.isUpdatingStatus.value 
+                    ? null 
+                    : (_) => controller.toggleOnlineStatus(),
+                  activeColor: Colors.green,
                 ),
-                _buildActionCard(
-                  'Earnings',
-                  Icons.monetization_on,
-                  Colors.green,
-                  () => Get.to(() => RiderEarningsScreen()),
-                ),
-                _buildActionCard(
-                  'Profile',
-                  Icons.person,
-                  Colors.orange,
-                  () => Get.to(() => RiderProfileScreen()),
-                ),
-                _buildActionCard(
-                  'Support',
-                  Icons.help,
-                  Colors.purple,
-                  () => Get.snackbar('Support', 'Contact admin at support@dailygro.com'),
+                Text(
+                  controller.isOnline ? 'Online' : 'Offline',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: controller.isOnline ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ),
+    ));
+  }
+
+  Widget _buildStatsSection(RiderController controller) {
+    return Obx(() => Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'Total Earnings',
+                '\$${controller.riderProfile.value?.totalEarnings ?? 0}',
+                Icons.today,
+                Colors.green,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                'Active Orders',
+                '${controller.activeOrders.where((o) => o.status != 'delivered').length}',
+                Icons.delivery_dining,
+                Colors.orange,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                'Available Orders',
+                '${controller.activeOrders.length}',
+                Icons.assignment,
+                Colors.blue,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                'Total Orders',
+                '${controller.riderProfile.value?.totalOrders ?? 0}',
+                Icons.account_balance_wallet,
+                Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ));
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.5,
+          children: [
+            _buildActionCard(
+              'View Orders',
+              Icons.list_alt,
+              Colors.blue,
+              () => Get.toNamed('/rider/orders'),
+            ),
+            _buildActionCard(
+              'Earnings',
+              Icons.monetization_on,
+              Colors.green,
+              () => Get.toNamed('/rider/earnings'),
+            ),
+            _buildActionCard(
+              'Profile',
+              Icons.person,
+              Colors.orange,
+              () => Get.to(RiderProfileScreen())
+            ),
+            _buildActionCard(
+              'Support',
+              Icons.help,
+              Colors.purple,
+              () => Get.snackbar('Support', 'Contact admin at support@dailygro.com'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

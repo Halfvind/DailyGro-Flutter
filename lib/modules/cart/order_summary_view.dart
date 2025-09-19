@@ -228,7 +228,7 @@ class OrderSummaryView extends StatelessWidget {
                                     ),
                                   ),
                                   Text(
-                                    '₹${item.itemTotal.toStringAsFixed(0)}',
+                                    '₹${item.itemTotal}',
                                     style: TextStyle(
                                       fontSize: AppSizes.fontM,
                                       fontWeight: FontWeight.w600,
@@ -361,7 +361,7 @@ class OrderSummaryView extends StatelessWidget {
                       ),
                     ),
                     Obx(() => Text(
-                      '₹${cartController.totalAmount.toStringAsFixed(0)}',
+                      '₹${cartController.totalAmount}',
                       style: TextStyle(
                         fontSize: AppSizes.fontL,
                         fontWeight: FontWeight.w600,
@@ -412,7 +412,7 @@ class OrderSummaryView extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '-₹${discount.toStringAsFixed(0)}',
+                              '-₹${discount}',
                               style: TextStyle(
                                 fontSize: AppSizes.fontL,
                                 fontWeight: FontWeight.w600,
@@ -446,7 +446,7 @@ class OrderSummaryView extends StatelessWidget {
                       final discount = couponController.getDiscountAmount(cartController.totalAmount.value);
                       final finalAmount = cartController.totalAmount.value + deliveryFee - discount;
                       return Text(
-                        '₹${finalAmount.toStringAsFixed(0)}',
+                        '₹${finalAmount}',
                         style: TextStyle(
                           fontSize: AppSizes.fontL,
                           fontWeight: FontWeight.bold,
@@ -477,12 +477,16 @@ class OrderSummaryView extends StatelessWidget {
                             'product_id': item.productId,
                             'quantity': item.quantity,
                             'price': item.price,
+
                           }).toList();
                           
                           final result = await orderController.createOrder(
                             totalAmount: finalAmount,
                             addressId: addressController.addresses.firstWhere((addr) => addr.isDefault).addressId,
                             paymentMethod: selectedPaymentMethod.value,
+                              deliveryfee:cartController.totalAmount.value >= 299 ? '0' : '49',
+                              discountamount:discount,
+                            couponcode:couponController.selectedCoupon.value?.code,
                             items: orderItems,
                           );
                           

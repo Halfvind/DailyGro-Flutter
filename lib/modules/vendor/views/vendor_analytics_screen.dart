@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../themes/app_colors.dart';
+import '../controllers/vendor_controller.dart';
 
-class VendorAnalyticsScreen extends StatelessWidget {
+class VendorAnalyticsScreen extends StatefulWidget {
   const VendorAnalyticsScreen({super.key});
+
+  @override
+  State<VendorAnalyticsScreen> createState() => _VendorAnalyticsScreenState();
+}
+
+class _VendorAnalyticsScreenState extends State<VendorAnalyticsScreen> {
+  final VendorController _vendorController = Get.find<VendorController>();
+
+  @override
+  void initState() {
+    super.initState();
+    _vendorController.loadAnalytics();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +54,16 @@ class VendorAnalyticsScreen extends StatelessWidget {
           children: [
             const Text('Earnings Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildEarningCard('Today', '\$245', Colors.green)),
-                Expanded(child: _buildEarningCard('This Week', '\$1,680', Colors.blue)),
-                Expanded(child: _buildEarningCard('This Month', '\$6,420', Colors.orange)),
-              ],
-            ),
+            Obx(() {
+              final analytics = _vendorController.analytics;
+              return Row(
+                children: [
+                  Expanded(child: _buildEarningCard('Today', '\$${analytics['today_earnings'] ?? '0'}', Colors.green)),
+                  Expanded(child: _buildEarningCard('This Week', '\$${analytics['week_earnings'] ?? '0'}', Colors.blue)),
+                  Expanded(child: _buildEarningCard('This Month', '\$${analytics['month_earnings'] ?? '0'}', Colors.orange)),
+                ],
+              );
+            }),
           ],
         ),
       ),
@@ -182,29 +200,32 @@ class VendorAnalyticsScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.star, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Average Rating', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('4.8/5.0 based on 324 reviews'),
-                      ],
+            Obx(() {
+              final vendor = _vendorController.vendor;
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.star, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Average Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('${vendor?.rating.toStringAsFixed(1) ?? '0.0'}/5.0 based on ${vendor?.totalOrders ?? 0} orders'),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text('4.8', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                ],
-              ),
-            ),
+                    Text('${vendor?.rating.toStringAsFixed(1) ?? '0.0'}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),

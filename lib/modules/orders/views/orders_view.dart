@@ -183,7 +183,7 @@ class OrdersView extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '₹${order.totalAmount.toStringAsFixed(0)}',
+                          '₹${order.totalAmount}',
                           style: TextStyle(
                             fontSize: AppSizes.fontL,
                             fontWeight: FontWeight.bold,

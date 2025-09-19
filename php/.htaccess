@@ -21,3 +21,23 @@ RewriteRule ^api/users/wallet$ users/wallet.php [L]
 RewriteRule ^api/users/wallet_transactions$ users/wallet_transactions.php [L]
 RewriteRule ^api/users/wallet_payment$ users/wallet_payment.php [L]
 RewriteRule ^api/users/product_detail$ users/product_detail.php [L]
+
+# Vendor endpoints
+RewriteRule ^api/vendor/get_vendor_profile$ vendor/get_vendor_profile.php [L]
+RewriteRule ^api/vendor/stock_management$ vendor/stock_management.php [L]
+RewriteRule ^api/vendor/update_stock$ vendor/update_stock.php [L]
+RewriteRule ^api/vendor/add_product$ vendor/add_product.php [L]
+RewriteRule ^api/vendor/categories_selection$ vendor/categories_selection.php [L]
+RewriteRule ^api/vendor/units_selection$ vendor/units_selection.php [L]
+RewriteRule ^api/vendor/vendor_orders$ vendor/vendors_orders.php [L]
+RewriteRule ^api/vendor/earnings$ vendor/earnings.php [L]
+RewriteRule ^api/vendor/wallet$ vendor/wallet.php [L]
+
+# Rider endpoints
+RewriteRule ^api/rider/get_rider_profile$ rider/get_rider_profile.php [L]
+RewriteRule ^api/rider/orders$ rider/orders.php [L]
+RewriteRule ^api/rider/earnings$ rider/earnings.php [L]
+RewriteRule ^api/rider/availability$ rider/availability.php [L]
+RewriteRule ^api/rider/wallet$ rider/wallet.php [L]
+RewriteRule ^api/rider/order_tracking$ rider/order_tracking.php [L]
+RewriteRule ^api/rider/analytics$ rider/analytics.php [L]

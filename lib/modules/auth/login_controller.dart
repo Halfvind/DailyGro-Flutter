@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../CommonComponents/controllers/global_controller.dart';
+import '../../data/api/api_client.dart';
 import '../../data/api/services/user_api_service.dart';
 import '../../data/api/services/vendor_api_service.dart';
 import '../../data/api/services/rider_api_service.dart';
 import '../../models/user_model.dart';
 import '../../routes/app_routes.dart';
+import '../vendor/controllers/vendor_controller.dart';
+import '../vendor/repositories/vendor_repository.dart';
+import '../rider/controllers/rider_controller.dart';
+import '../rider/repositories/rider_repository.dart';
+import '../address/repositories/address_repository.dart';
+import '../../data/api/services/profile_api_service.dart';
+import '../wallet/repositories/wallet_repository.dart';
 
 class LoginController extends GetxController {
   GlobalController? _globalController;
@@ -98,13 +106,14 @@ class LoginController extends GetxController {
       if (response?.isOk == true) {
         print('Login successful, setting user data...');
         
-        // Create user model from login response
-        final userModel = UserModel.fromLoginResponse(response!.body);
-        print('HELLO CHECKING >>>>>>>$userModel');
+        print('Login response body: ${response!.body}');
         
         if (_globalController != null) {
-          final userData = response.body['data'];
+          final userData = response.body['data'] ?? response.body;
           _globalController!.setUserData(userData);
+          
+          // Initialize role-specific controllers after login
+          await _initializeRoleControllers();
           
           // Verify after setting
           print('🔍 After setUserData:');
@@ -130,6 +139,60 @@ class LoginController extends GetxController {
     } finally {
       _isLoading.value = false;
       print('=== LOGIN ATTEMPT END ===');
+    }
+  }
+
+  Future<void> _initializeRoleControllers() async {
+    try {
+      // Initialize API client FIRST - required by all other services
+      if (!Get.isRegistered<ApiClient>()) {
+        Get.put(ApiClient());
+      }
+      
+      // Initialize common dependencies
+      if (!Get.isRegistered<GlobalController>()) {
+        Get.put(GlobalController());
+      }
+      
+      // Initialize common repositories needed by all roles
+      if (!Get.isRegistered<AddressRepository>()) {
+        Get.put(AddressRepository());
+      }
+      
+      if (!Get.isRegistered<ProfileApiService>()) {
+        Get.put(ProfileApiService());
+      }
+      
+      if (!Get.isRegistered<WalletRepository>()) {
+        Get.put(WalletRepository());
+      }
+      
+      // Initialize role-specific controllers
+      switch (_selectedRole.value) {
+        case 'vendor':
+          if (!Get.isRegistered<VendorRepository>()) {
+            Get.put(VendorRepository());
+          }
+          if (!Get.isRegistered<VendorController>()) {
+            Get.put(VendorController());
+          }
+          break;
+        case 'rider':
+          if (!Get.isRegistered<RiderRepository>()) {
+            Get.put(RiderRepository());
+          }
+          if (!Get.isRegistered<RiderController>()) {
+            Get.put(RiderController());
+          }
+          break;
+        case 'user':
+          // User-specific repositories are already initialized above
+          break;
+      }
+      
+      print('Role-specific controllers initialized for: ${_selectedRole.value}');
+    } catch (e) {
+      print('Error initializing role controllers: $e');
     }
   }
 

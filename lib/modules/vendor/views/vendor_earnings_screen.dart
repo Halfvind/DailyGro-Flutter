@@ -1,34 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../themes/app_colors.dart';
-import '../controllers/vendor_controller.dart';
+import '../controllers/vendor_earnings_controller.dart';
 
-class VendorEarningsScreen extends StatelessWidget {
+class VendorEarningsScreen extends StatefulWidget {
   const VendorEarningsScreen({super.key});
 
   @override
+  State<VendorEarningsScreen> createState() => _VendorEarningsScreenState();
+}
+
+class _VendorEarningsScreenState extends State<VendorEarningsScreen> {
+  late VendorEarningsController controller;
+  String selectedPeriod = 'today';
+
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(VendorEarningsController());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.loadEarnings(selectedPeriod);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Earnings & Wallet'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (period) {
+              setState(() {
+                selectedPeriod = period;
+              });
+              controller.loadEarnings(period);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'today', child: Text('Today')),
+              const PopupMenuItem(value: 'week', child: Text('This Week')),
+              const PopupMenuItem(value: 'month', child: Text('This Month')),
+              const PopupMenuItem(value: 'year', child: Text('This Year')),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(selectedPeriod.toUpperCase()),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildWalletBalance(),
-            const SizedBox(height: 20),
-            _buildEarningsBreakdown(),
-            const SizedBox(height: 20),
-            _buildWithdrawSection(),
-            const SizedBox(height: 20),
-            _buildTransactionHistory(),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        return RefreshIndicator(
+          onRefresh: () => controller.loadEarnings(selectedPeriod),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildWalletBalance(),
+                const SizedBox(height: 20),
+                _buildEarningsSummary(),
+                const SizedBox(height: 20),
+                _buildRecentOrders(),
+                const SizedBox(height: 20),
+                _buildTransactionHistory(),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -49,13 +101,13 @@ class VendorEarningsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Available Balance',
+              'Wallet Balance',
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '\$2,450.75',
-              style: TextStyle(
+            Text(
+              '₹${controller.walletBalance.value}',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -68,12 +120,12 @@ class VendorEarningsScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Pending Settlement', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    const Text('\$320.50', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    const Text('Period Earnings', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text('₹${controller.totalEarnings.value}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 ElevatedButton(
-                  onPressed: _withdrawEarnings,
+                  onPressed: _showWithdrawDialog,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
@@ -88,83 +140,80 @@ class VendorEarningsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEarningsBreakdown() {
+  Widget _buildEarningsSummary() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Earnings Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('${selectedPeriod.toUpperCase()} Summary', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildEarningRow('Total Sales', '\$3,240.75', Colors.green),
-            _buildEarningRow('Platform Commission (8%)', '-\$259.26', Colors.red),
-            _buildEarningRow('Delivery Charges', '+\$145.50', Colors.blue),
-            _buildEarningRow('Tax Deduction', '-\$96.24', Colors.orange),
-            const Divider(),
-            _buildEarningRow('Net Earnings', '\$2,450.75', AppColors.primary, isBold: true),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard('Total Orders', controller.totalOrders.value.toString(), Icons.shopping_cart, Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard('Completed', controller.completedOrders.value.toString(), Icons.check_circle, Colors.green),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard('Earnings', '₹${controller.totalEarnings.value}', Icons.account_balance_wallet, AppColors.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard('Cancelled', controller.cancelledOrders.value.toString(), Icons.cancel, Colors.red),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEarningRow(String title, String amount, Color color, {bool isBold = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              fontSize: isBold ? 16 : 14,
-            ),
-          ),
-          Text(
-            amount,
-            style: TextStyle(
-              color: color,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-              fontSize: isBold ? 16 : 14,
-            ),
-          ),
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
     );
   }
 
-  Widget _buildWithdrawSection() {
+  Widget _buildRecentOrders() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Quick Withdraw', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Recent Orders', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildWithdrawButton('\$500', '500')),
-                const SizedBox(width: 8),
-                Expanded(child: _buildWithdrawButton('\$1000', '1000')),
-                const SizedBox(width: 8),
-                Expanded(child: _buildWithdrawButton('All', '2450.75')),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Custom Amount',
-                prefixText: '\$ ',
-                border: const OutlineInputBorder(),
-                suffixIcon: ElevatedButton(
-                  onPressed: _customWithdraw,
-                  child: const Text('Withdraw'),
-                ),
-              ),
-              keyboardType: TextInputType.number,
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.recentOrders.length,
+              itemBuilder: (context, index) {
+                final order = controller.recentOrders[index];
+                return _buildOrderItem(order);
+              },
             ),
           ],
         ),
@@ -172,43 +221,9 @@ class VendorEarningsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWithdrawButton(String label, String amount) {
-    return OutlinedButton(
-      onPressed: () => _quickWithdraw(amount),
-      child: Text(label),
-    );
-  }
-
-  Widget _buildTransactionHistory() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Transaction History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                TextButton(
-                  onPressed: () => Get.toNamed('/vendor/transaction-history'),
-                  child: const Text('View All'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          //  ...controller.transactions.map((transaction) => _buildTransactionItem(transaction)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
-    final amount = transaction['amount'] as double;
-    final isPositive = amount > 0;
-    final color = isPositive ? Colors.green : Colors.red;
-    final amountText = '${isPositive ? '+' : ''}\$${amount.abs().toStringAsFixed(2)}';
+  Widget _buildOrderItem(Map<String, dynamic> order) {
+    final status = order['status'] ?? 'pending';
+    final statusColor = _getStatusColor(status);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -222,12 +237,12 @@ class VendorEarningsScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (transaction['color'] as Color).withValues(alpha: 0.1),
+              color: statusColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              transaction['type'] == 'Withdrawal' ? Icons.arrow_upward : Icons.arrow_downward,
-              color: transaction['color'] as Color,
+              _getStatusIcon(status),
+              color: statusColor,
               size: 16,
             ),
           ),
@@ -236,8 +251,9 @@ class VendorEarningsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(transaction['type'] as String, style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text(transaction['date'] as String, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(order['order_number'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w500)),
+                Text('Customer: ${order['customer_name'] ?? 'N/A'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(_formatDateTime(order['created_at']), style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
@@ -245,17 +261,18 @@ class VendorEarningsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                transaction['amount'] as String,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: transaction['color'] as Color,
-                ),
+                '₹${order['total_amount'] ?? '0.00'}',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
               ),
-              Text(
-                transaction['status'] as String,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: transaction['status'] == 'Completed' ? Colors.green : Colors.orange,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -265,70 +282,161 @@ class VendorEarningsScreen extends StatelessWidget {
     );
   }
 
-  void _withdrawEarnings() {
-    final controller = Get.find<VendorController>();
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Withdraw Earnings'),
-        content: Text('Withdraw \$${controller.walletBalance.toStringAsFixed(2)} to your registered bank account?'),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final success = await controller.withdrawAmount(controller.walletBalance);
-              Get.back();
-              if (success) {
-                Get.snackbar('Success', 'Withdrawal request submitted');
-              } else {
-                Get.snackbar('Error', 'Withdrawal failed');
-              }
-            },
-            child: const Text('Confirm'),
+  Widget _buildTransactionHistory() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Transaction History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.transactions.length,
+              itemBuilder: (context, index) {
+                final transaction = controller.transactions[index];
+                return _buildTransactionItem(transaction);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
+    final amount = double.tryParse(transaction['amount'].toString()) ?? 0.0;
+    final type = transaction['type'] ?? 'debit';
+    final isCredit = type == 'credit';
+    final color = isCredit ? Colors.green : Colors.red;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCredit ? Icons.add : Icons.remove,
+              color: color,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(transaction['description'] ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.w500)),
+                if (transaction['order_number'] != null)
+                  Text('Order: ${transaction['order_number']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(_formatDateTime(transaction['created_at']), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isCredit ? '+' : '-'}₹${amount.toStringAsFixed(2)}',
+                style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              ),
+              Text(
+                transaction['status'] ?? 'pending',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: (transaction['status'] ?? 'pending') == 'completed' ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _quickWithdraw(String amount) async {
-    final controller = Get.find<VendorController>();
-    final withdrawAmount = double.parse(amount);
-    final success = await controller.withdrawAmount(withdrawAmount);
-    if (success) {
-      Get.snackbar('Success', 'Withdrawal of \$$amount requested');
-    } else {
-      Get.snackbar('Error', 'Insufficient balance or withdrawal failed');
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
+        return Colors.green;
+      case 'ready':
+        return Colors.blue;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
-  void _customWithdraw() {
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
+        return Icons.check_circle;
+      case 'ready':
+        return Icons.local_shipping;
+      case 'pending':
+        return Icons.access_time;
+      case 'cancelled':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
+  }
+
+  String _formatDateTime(String? dateTime) {
+    if (dateTime == null) return 'N/A';
+    try {
+      final dt = DateTime.parse(dateTime);
+      return '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateTime;
+    }
+  }
+
+  void _showWithdrawDialog() {
     final amountController = TextEditingController();
     Get.dialog(
       AlertDialog(
-        title: const Text('Custom Withdrawal'),
-        content: TextField(
-          controller: amountController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Amount',
-            prefixText: '\$ ',
-            border: OutlineInputBorder(),
-          ),
+        title: const Text('Withdraw Amount'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Available Balance: ₹${controller.walletBalance.value}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '₹ ',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
               final amount = double.tryParse(amountController.text);
               if (amount != null && amount > 0) {
-                final controller = Get.find<VendorController>();
-                final success = await controller.withdrawAmount(amount);
                 Get.back();
-                if (success) {
-                  Get.snackbar('Success', 'Withdrawal of \$${amount.toStringAsFixed(2)} requested');
-                } else {
-                  Get.snackbar('Error', 'Insufficient balance or withdrawal failed');
-                }
+                Get.snackbar('Success', 'Withdrawal request of ₹${amount.toStringAsFixed(2)} submitted');
               } else {
                 Get.snackbar('Error', 'Please enter a valid amount');
               }

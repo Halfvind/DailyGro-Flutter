@@ -105,7 +105,7 @@ class ProductDetailView extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '₹${product.price.toStringAsFixed(0)}',
+                          '₹${product.price}',
                           style: TextStyle(
                             fontSize: AppSizes.fontXXL,
                             fontWeight: FontWeight.bold,
@@ -115,7 +115,7 @@ class ProductDetailView extends StatelessWidget {
                         if (product.originalPrice > product.price) ...[
                           SizedBox(width: AppSizes.width(8)),
                           Text(
-                            '₹${product.originalPrice.toStringAsFixed(0)}',
+                            '₹${product.originalPrice}',
                             style: TextStyle(
                               fontSize: AppSizes.fontL,
                               color: Colors.grey,

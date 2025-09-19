@@ -49,41 +49,19 @@ class RiderEarningsScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildEarningsCard(
-                  'Today',
-                  '\$${controller.todayEarnings.toStringAsFixed(2)}',
-                  Icons.today,
+                  'Total Earnings',
+                  '\$${controller.riderProfile.value?.totalEarnings.toString() ?? 0}',
+                  Icons.account_balance_wallet,
                   Colors.green,
                 ),
               ),
               SizedBox(width: 12),
               Expanded(
                 child: _buildEarningsCard(
-                  'This Week',
-                  '\$${controller.weeklyEarnings.toStringAsFixed(2)}',
-                  Icons.date_range,
+                  'Total Orders',
+                  '${controller.riderProfile.value?.totalOrders.toString() ?? 0}',
+                  Icons.shopping_bag,
                   Colors.blue,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildEarningsCard(
-                  'This Month',
-                  '\$${controller.monthlyEarnings.toStringAsFixed(2)}',
-                  Icons.calendar_month,
-                  Colors.orange,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildEarningsCard(
-                  'Total',
-                  '\$${controller.totalEarnings.toStringAsFixed(2)}',
-                  Icons.account_balance_wallet,
-                  Colors.purple,
                 ),
               ),
             ],
@@ -115,13 +93,7 @@ class RiderEarningsScreen extends StatelessWidget {
                     child: CommonButton(
                       text: 'Request Withdrawal',
                       onPressed: () {
-                        final amount = double.tryParse(withdrawalController.text);
-                        if (amount != null && amount > 0) {
-                          controller.requestWithdrawal(amount);
-                          withdrawalController.clear();
-                        } else {
-                          Get.snackbar('Error', 'Please enter a valid amount');
-                        }
+                        Get.snackbar('Info', 'Withdrawal feature coming soon');
                       },
                     ),
                   ),
@@ -137,123 +109,31 @@ class RiderEarningsScreen extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
-          controller.earnings.isEmpty
-              ? Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.history, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No earnings yet', style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: controller.earnings.length,
-                  itemBuilder: (context, index) {
-                    final earning = controller.earnings[index];
-                    return Card(
-                      margin: EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getEarningTypeColor(earning.type),
-                          child: Icon(
-                            _getEarningTypeIcon(earning.type),
-                            color: Colors.white,
-                          ),
-                        ),
-                        title: Text('Order #${earning.orderId}'),
-                        subtitle: Text(
-                          '${earning.date.day}/${earning.date.month}/${earning.date.year} • ${earning.type.toUpperCase()}',
-                        ),
-                        trailing: Text(
-                          '\$${earning.amount.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+          Center(
+            child: Column(
+              children: [
+                Icon(Icons.history, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text('No earnings history available', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
         ],
       ),
     ));
   }
 
   Widget _buildWithdrawalsTab() {
-    return Obx(() => controller.withdrawals.isEmpty
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.account_balance, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('No withdrawal requests', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          )
-        : ListView.builder(
-            padding: EdgeInsets.all(16),
-            itemCount: controller.withdrawals.length,
-            itemBuilder: (context, index) {
-              final withdrawal = controller.withdrawals[index];
-              return Card(
-                margin: EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '\$${withdrawal.amount.toStringAsFixed(2)}',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          _buildWithdrawalStatusChip(withdrawal.status),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-                          SizedBox(width: 8),
-                          Text(
-                            'Requested: ${withdrawal.requestDate.day}/${withdrawal.requestDate.month}/${withdrawal.requestDate.year}',
-                          ),
-                        ],
-                      ),
-                      if (withdrawal.processedDate != null) ...[
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.check_circle, size: 16, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text(
-                              'Processed: ${withdrawal.processedDate!.day}/${withdrawal.processedDate!.month}/${withdrawal.processedDate!.year}',
-                            ),
-                          ],
-                        ),
-                      ],
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.account_balance, size: 16, color: Colors.grey[600]),
-                          SizedBox(width: 8),
-                          Text('Bank Account: ${withdrawal.bankAccount}'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ));
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.account_balance, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('No withdrawal requests', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
   }
 
   Widget _buildEarningsCard(String title, String amount, IconData icon, Color color) {

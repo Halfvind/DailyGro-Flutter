@@ -1,5 +1,5 @@
 <?php
-// Enable error reporting (for debugging 500 errors)
+// Enable error reporting for debugging (optional, turn off in production)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -70,7 +70,7 @@ function getOrdersList() {
             'payment_status' => $row['payment_status'],
             'delivery_address' => $row['address_line'] . ', ' . $row['city'] . ', ' . $row['state'] . ' - ' . $row['pincode'],
             'created_at' => $row['created_at'],
-            'estimated_delivery' => $row['estimated_delivery_date']
+            'estimated_delivery' => $row['estimated_delivery'] ?? null
         ];
     }
 
@@ -143,7 +143,7 @@ function getOrderDetails() {
                 'address' => $order['address_line'] . ', ' . $order['city'] . ', ' . $order['state'] . ' - ' . $order['pincode']
             ],
             'created_at' => $order['created_at'],
-            'estimated_delivery' => $order['estimated_delivery_date'],
+            'estimated_delivery' => $order['estimated_delivery'] ?? null,
             'items' => $items
         ]
     ]);
@@ -166,9 +166,7 @@ function createOrder() {
     $totalAmount = floatval($data['total_amount']);
     $deliveryAddressId = isset($data['address_id']) ? intval($data['address_id']) : 0;
 
-    // Validate enum values
     $validPaymentMethods = ['cash', 'online', 'wallet'];
-
     $paymentMethod = $data['payment_method'] ?? 'cash';
     if (!in_array($paymentMethod, $validPaymentMethods)) {
         echo json_encode(["status" => "error", "message" => "Invalid payment_method"]);

@@ -5,7 +5,7 @@ import '../../../CommonComponents/CommonWidgets/common_textfield.dart';
 import '../../../CommonComponents/CommonWidgets/logout_button.dart';
 import '../../../themes/app_colors.dart';
 import '../controllers/vendor_controller.dart';
-import '../models/vendor_model.dart';
+
 
 class VendorProfileScreen extends StatefulWidget {
   const VendorProfileScreen({super.key});
@@ -15,14 +15,46 @@ class VendorProfileScreen extends StatefulWidget {
 }
 
 class _VendorProfileScreenState extends State<VendorProfileScreen> {
-  final _shopNameController = TextEditingController(text: 'Fresh Mart Store');
-  final _ownerNameController = TextEditingController(text: 'John Doe');
-  final _phoneController = TextEditingController(text: '+1 234 567 8900');
-  final _emailController = TextEditingController(text: 'vendor@dailygro.com');
-  final _addressController = TextEditingController(text: '123 Market Street, City');
-  final _licenseController = TextEditingController(text: 'BL123456789');
-  final _bankAccountController = TextEditingController(text: '****1234');
-  final _upiController = TextEditingController(text: 'vendor@upi');
+  final _shopNameController = TextEditingController();
+  final _ownerNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _licenseController = TextEditingController();
+  final _bankAccountController = TextEditingController();
+  final _upiController = TextEditingController();
+  final VendorController _vendorController = Get.find<VendorController>();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVendorProfile();
+  }
+
+  void _loadVendorProfile() async {
+    await _vendorController.loadVendorProfile();
+    _updateTextFields();
+  }
+
+  void _updateTextFields() {
+    final vendor = _vendorController.vendor;
+    if (vendor != null && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _shopNameController.text = vendor.businessName;
+            _ownerNameController.text = vendor.name;
+            _phoneController.text = vendor.phone;
+            _emailController.text = vendor.email;
+            _addressController.text = vendor.address;
+            _licenseController.text = _vendorController.businessLicense;
+            _upiController.text = _vendorController.upiId;
+            _bankAccountController.text = _vendorController.bankAccount;
+          });
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,14 +122,14 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              _shopNameController.text,
+            Obx(() => Text(
+              _vendorController.vendor?.businessName ?? 'Loading...',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Vendor ID: VEN001',
+            )),
+            Obx(() => Text(
+              'Vendor ID: ${_vendorController.vendor?.id ?? 'Loading...'}',
               style: TextStyle(color: Colors.grey[600]),
-            ),
+            )),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -178,7 +210,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   }
 
   Widget _buildBusinessSettings() {
-    return Card(
+    return Obx(() => Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -186,44 +218,105 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
           children: [
             const Text('Business Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            _buildSettingItem('Store Status', 'Open', Icons.store, true),
-            _buildSettingItem('Delivery Radius', '5 km', Icons.location_on, false),
-            _buildSettingItem('Minimum Order', '\$20', Icons.shopping_cart, false),
-            _buildSettingItem('Operating Hours', '9 AM - 9 PM', Icons.access_time, false),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Store Status', style: TextStyle(fontWeight: FontWeight.w500)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _vendorController.storeStatus == 'open'
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: _vendorController.storeStatus == 'open'
+                          ? Colors.green
+                          : Colors.red,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _vendorController.storeStatus == 'open' ? 'Open' : 'Closed',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: _vendorController.storeStatus == 'open'
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: _vendorController.storeStatus == 'open',
+                        onChanged: (value) {
+                          _vendorController.updateStoreStatus(value);
+                        },
+                        activeColor: AppColors.primary,
+                        inactiveThumbColor: Colors.red,
+                        inactiveTrackColor: Colors.red.shade200,
+                        activeTrackColor: AppColors.primary.withOpacity(0.4),
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Operating Hours', style: TextStyle(fontWeight: FontWeight.w500)),
+                TextButton(
+                  onPressed: _pickOperatingHours,
+                  child: Text(
+                    '${_vendorController.openingTime.substring(0, 5)} - ${_vendorController.closingTime.substring(0, 5)}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
+    ));
+  }
+
+  Future<void> _pickOperatingHours() async {
+    TimeOfDay? opening = await showTimePicker(
+      context: context,
+      initialTime: _stringToTimeOfDay(_vendorController.openingTime),
+    );
+
+    if (opening == null) return;
+
+    TimeOfDay? closing = await showTimePicker(
+      context: context,
+      initialTime: _stringToTimeOfDay(_vendorController.closingTime),
+    );
+
+    if (closing == null) return;
+
+    _vendorController.updateOperatingHours(
+      _timeOfDayToString(opening),
+      _timeOfDayToString(closing),
     );
   }
 
-  Widget _buildSettingItem(String title, String value, IconData icon, bool hasSwitch) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-                Text(value, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-              ],
-            ),
-          ),
-          if (hasSwitch)
-            Switch(
-              value: true,
-              onChanged: (value) {},
-              activeColor: AppColors.primary,
-            )
-          else
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        ],
-      ),
+  TimeOfDay _stringToTimeOfDay(String time) {
+    final parts = time.split(':');
+    return TimeOfDay(
+      hour: int.parse(parts[0]),
+      minute: int.parse(parts[1]),
     );
   }
+
+  String _timeOfDayToString(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00';
+  }
+
 
   Widget _buildPaymentInfo() {
     return Card(
@@ -292,31 +385,33 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   }
 
   void _saveProfile() async {
-    final controller = Get.find<VendorController>();
-    
-    final updatedVendor = VendorModel(
-      id: controller.vendor?.id ?? '1',
-      name: _ownerNameController.text,
-      email: _emailController.text,
-      phone: _phoneController.text,
-      businessName: _shopNameController.text,
-      address: _addressController.text,
-      isActive: controller.vendor?.isActive ?? true,
-      rating: controller.vendor?.rating ?? 4.8,
-      totalOrders: controller.vendor?.totalOrders ?? 0,
-      totalEarnings: controller.vendor?.totalEarnings ?? 0.0,
-    );
-    
-    final success = await controller.updateVendorProfile(updatedVendor);
-    
+    final profileData = {
+      'vendor_id': _vendorController.vendor?.id.toString() ?? '1',
+      'store_name': _shopNameController.text,
+      'business_license': _licenseController.text,
+      'business_address': _addressController.text,
+      'business_type': _vendorController.businessType,
+      'verification_status': 'verified',
+      'rating': _vendorController.vendor?.rating ?? 0.0,
+      'store_status': _vendorController.storeStatus=='closed'?0:1,
+      'opening_time': _vendorController.openingTime,
+      'closing_time': _vendorController.closingTime,
+      'upi_id': _upiController.text,
+      'bank_account_number': _bankAccountController.text,
+      'vendor_name':_ownerNameController.text,
+      'vendor_mail':_emailController.text,
+      'contact_number':_phoneController.text
+    };
+    print(profileData);
+
+    final success = await _vendorController.updateVendorProfile(profileData);
+
     if (success) {
       Get.snackbar('Success', 'Profile updated successfully');
     } else {
       Get.snackbar('Error', 'Failed to update profile');
     }
   }
-
-
 
   @override
   void dispose() {

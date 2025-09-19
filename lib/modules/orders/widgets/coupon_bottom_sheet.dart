@@ -5,19 +5,29 @@ import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../coupon/controllers/coupon_controller.dart';
 import '../../cart/controllers/cart_controller.dart';
 
-class CouponBottomSheet extends StatelessWidget {
+class CouponBottomSheet extends StatefulWidget {
   const CouponBottomSheet({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final couponController = Get.put(CouponController());
-    final cartController = Get.find<CartController>();
-    
-    // Load coupons when sheet opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      couponController.loadCoupons();
-    });
+  State<CouponBottomSheet> createState() => _CouponBottomSheetState();
+}
 
+class _CouponBottomSheetState extends State<CouponBottomSheet> {
+  late final CouponController couponController;
+  late final CartController cartController;
+
+  @override
+  void initState() {
+    super.initState();
+    couponController = Get.put(CouponController());
+    cartController = Get.find<CartController>();
+
+    // Call API to load coupons
+    couponController.loadCoupons();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
@@ -54,14 +64,14 @@ class CouponBottomSheet extends StatelessWidget {
           Expanded(
             child: Obx(() {
               if (couponController.isLoading.value) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
 
               if (couponController.coupons.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+                    children: const [
                       Icon(Icons.local_offer_outlined, size: 64, color: Colors.grey),
                       SizedBox(height: 16),
                       Text('No coupons available'),
@@ -71,15 +81,19 @@ class CouponBottomSheet extends StatelessWidget {
               }
 
               final orderAmount = cartController.totalAmount.value;
-          /*    final eligibleCoupons = couponController.getEligibleCoupons(orderAmount);
+
+              final eligibleCoupons = couponController.coupons
+                  .where((c) => couponController.isCouponEligible(c, orderAmount))
+                  .toList();
+
               final ineligibleCoupons = couponController.coupons
-                  .where((coupon) => !couponController.isCouponEligible(coupon, orderAmount))
-                  .toList();*/
+                  .where((c) => !couponController.isCouponEligible(c, orderAmount))
+                  .toList();
 
               return ListView(
                 padding: EdgeInsets.all(AppSizes.width(16)),
                 children: [
-                  if (couponController.coupons.isNotEmpty) ...[
+                  if (eligibleCoupons.isNotEmpty) ...[
                     Text(
                       'Eligible Coupons',
                       style: TextStyle(
@@ -89,10 +103,9 @@ class CouponBottomSheet extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: AppSizes.height(12)),
-                    ...couponController.coupons.map((coupon) => _buildCouponCard(coupon, true, orderAmount)),
+                    ...eligibleCoupons.map((c) => _buildCouponCard(c, true, orderAmount)),
                   ],
-                  
-                /*  if (ineligibleCoupons.isNotEmpty) ...[
+                  if (ineligibleCoupons.isNotEmpty) ...[
                     if (eligibleCoupons.isNotEmpty) SizedBox(height: AppSizes.height(20)),
                     Text(
                       'Other Coupons',
@@ -103,8 +116,8 @@ class CouponBottomSheet extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: AppSizes.height(12)),
-                    ...ineligibleCoupons.map((coupon) => _buildCouponCard(coupon, false, orderAmount)),
-                  ],*/
+                    ...ineligibleCoupons.map((c) => _buildCouponCard(c, false, orderAmount)),
+                  ],
                 ],
               );
             }),
@@ -115,11 +128,10 @@ class CouponBottomSheet extends StatelessWidget {
   }
 
   Widget _buildCouponCard(coupon, bool isEligible, double orderAmount) {
-    final couponController = Get.find<CouponController>();
-    final validUntilDate = DateTime.tryParse(coupon.validUntil) ?? DateTime.now();
-    final isExpired = validUntilDate.isBefore(DateTime.now());
+    final validUntil = DateTime.tryParse(coupon.validUntil) ?? DateTime.now();
+    final isExpired = validUntil.isBefore(DateTime.now());
     final minOrderNotMet = orderAmount < coupon.minOrderAmount;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: AppSizes.height(12)),
       decoration: BoxDecoration(
@@ -140,23 +152,17 @@ class CouponBottomSheet extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  // Coupon Icon
                   Container(
                     padding: EdgeInsets.all(AppSizes.width(8)),
                     decoration: BoxDecoration(
                       color: isEligible ? Colors.green[100] : Colors.grey[300],
                       borderRadius: BorderRadius.circular(AppSizes.radius(8)),
                     ),
-                    child: Icon(
-                      Icons.local_offer,
-                      color: isEligible ? Colors.green : Colors.grey,
-                      size: AppSizes.font(20),
-                    ),
+                    child: Icon(Icons.local_offer,
+                        color: isEligible ? Colors.green : Colors.grey,
+                        size: AppSizes.font(20)),
                   ),
-                  
                   SizedBox(width: AppSizes.width(12)),
-                  
-                  // Coupon Code
                   Expanded(
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -177,19 +183,12 @@ class CouponBottomSheet extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
                   if (isEligible)
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: AppSizes.font(16),
-                      color: Colors.green,
-                    ),
+                    Icon(Icons.arrow_forward_ios,
+                        size: AppSizes.font(16), color: Colors.green),
                 ],
               ),
-              
               SizedBox(height: AppSizes.height(12)),
-              
-              // Title and Description
               Text(
                 coupon.title,
                 style: TextStyle(
@@ -198,20 +197,12 @@ class CouponBottomSheet extends StatelessWidget {
                   color: isEligible ? Colors.black : Colors.grey[600],
                 ),
               ),
-              
               SizedBox(height: AppSizes.height(4)),
-              
               Text(
                 coupon.description,
-                style: TextStyle(
-                  fontSize: AppSizes.fontM,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: AppSizes.fontM, color: Colors.grey[600]),
               ),
-              
               SizedBox(height: AppSizes.height(8)),
-              
-              // Discount Info
               Row(
                 children: [
                   Container(
@@ -224,7 +215,7 @@ class CouponBottomSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppSizes.radius(4)),
                     ),
                     child: Text(
-                      coupon.discountType == 'percentage' 
+                      coupon.discountType == 'percentage'
                           ? '${coupon.discountValue.toInt()}% OFF'
                           : '₹${coupon.discountValue.toInt()} OFF',
                       style: TextStyle(
@@ -234,7 +225,6 @@ class CouponBottomSheet extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
                   if (isEligible && orderAmount >= coupon.minOrderAmount) ...[
                     SizedBox(width: AppSizes.width(8)),
                     Container(
@@ -258,10 +248,7 @@ class CouponBottomSheet extends StatelessWidget {
                   ],
                 ],
               ),
-              
               SizedBox(height: AppSizes.height(8)),
-              
-              // Conditions and Validity
               Row(
                 children: [
                   Expanded(
@@ -275,7 +262,7 @@ class CouponBottomSheet extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Valid till ${DateFormat('dd MMM').format(validUntilDate)}',
+                    'Valid till ${DateFormat('dd MMM').format(validUntil)}',
                     style: TextStyle(
                       fontSize: AppSizes.fontS,
                       color: isExpired ? Colors.red : Colors.grey[600],
@@ -284,8 +271,6 @@ class CouponBottomSheet extends StatelessWidget {
                   ),
                 ],
               ),
-              
-              // Ineligibility reason
               if (!isEligible) ...[
                 SizedBox(height: AppSizes.height(8)),
                 Container(
@@ -296,18 +281,18 @@ class CouponBottomSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: AppSizes.font(16), color: Colors.red),
+                      Icon(Icons.info_outline,
+                          size: AppSizes.font(16), color: Colors.red),
                       SizedBox(width: AppSizes.width(6)),
                       Expanded(
                         child: Text(
-                          isExpired 
+                          isExpired
                               ? 'This coupon has expired'
                               : 'Add ₹${(coupon.minOrderAmount - orderAmount).toInt()} more to use this coupon',
                           style: TextStyle(
-                            fontSize: AppSizes.fontS,
-                            color: Colors.red[700],
-                            fontWeight: FontWeight.w500,
-                          ),
+                              fontSize: AppSizes.fontS,
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],

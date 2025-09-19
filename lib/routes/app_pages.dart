@@ -4,7 +4,11 @@ import '../data/api/api_client.dart';
 import '../data/api/services/user_api_service.dart';
 import '../data/api/services/vendor_api_service.dart';
 import '../data/api/services/rider_api_service.dart';
+import '../data/api/services/profile_api_service.dart';
 import '../data/repositories/auth_repository.dart';
+import '../CommonComponents/controllers/global_controller.dart';
+import '../modules/address/repositories/address_repository.dart';
+import '../modules/wallet/repositories/wallet_repository.dart';
 import '../modules/vendor/repositories/vendor_repository.dart';
 import '../data/repositories/rider_repository.dart';
 import '../models/cart_item_model.dart';
@@ -64,10 +68,24 @@ class AppPages {
     GetPage(
       name: Routes.home,
       page: () => BottomNavigationView(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<GlobalController>()) Get.lazyPut(() => GlobalController());
+        if (!Get.isRegistered<ProfileApiService>()) Get.lazyPut(() => ProfileApiService());
+        if (!Get.isRegistered<AddressRepository>()) Get.lazyPut(() => AddressRepository());
+        if (!Get.isRegistered<WalletRepository>()) Get.lazyPut(() => WalletRepository());
+      }),
     ),
     GetPage(
       name: Routes.bottomBar,
       page: () => BottomNavigationView(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<ApiClient>()) Get.lazyPut(() => ApiClient());
+        if (!Get.isRegistered<GlobalController>()) Get.lazyPut(() => GlobalController());
+        if (!Get.isRegistered<ProfileApiService>()) Get.lazyPut(() => ProfileApiService());
+        if (!Get.isRegistered<AddressRepository>()) Get.lazyPut(() => AddressRepository());
+        if (!Get.isRegistered<WalletRepository>()) Get.lazyPut(() => WalletRepository());
+      }),
     ),
     GetPage(
       name: Routes.userSignup,

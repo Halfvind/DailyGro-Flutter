@@ -1,44 +1,70 @@
 <?php
-require_once '../config.php';
-header('Content-Type: application/json');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+header("Content-Type: application/json");
+
+// DB Connection
+$servername = "localhost";
+$username   = "root";
+$password   = "";
+$dbname     = "DailyGro";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    echo json_encode(["status" => "error", "message" => "Database connection failed"]);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+    echo json_encode(["status" => "error", "message" => "Only POST method allowed"]);
     exit;
 }
 
-$product_id = $_POST['product_id'] ?? null;
-$vendor_id = $_POST['vendor_id'] ?? null;
-$stock_quantity = $_POST['stock_quantity'] ?? null;
+$input = json_decode(file_get_contents('php://input'), true);
 
-if (!$product_id || !$vendor_id || $stock_quantity === null) {
-    echo json_encode(['status' => 'error', 'message' => 'Required fields missing']);
+$product_id = intval($input['product_id'] ?? 0);
+$vendor_id = intval($input['vendor_id'] ?? 0);
+$stock_quantity = intval($input['stock_quantity'] ?? 0);
+
+if (empty($product_id) || empty($vendor_id)) {
+    echo json_encode(["status" => "error", "message" => "Product ID and Vendor ID are required"]);
     exit;
 }
 
-try {
-    // Verify product belongs to vendor
-    $stmt = $pdo->prepare("SELECT product_id FROM products WHERE product_id = ? AND vendor_id = ?");
-    $stmt->execute([$product_id, $vendor_id]);
-    
-    if (!$stmt->fetch()) {
-        echo json_encode(['status' => 'error', 'message' => 'Product not found']);
-        exit;
-    }
-    
-    // Update stock
-    $status = $stock_quantity > 0 ? 'active' : 'out_of_stock';
-    $stmt = $pdo->prepare("UPDATE products SET stock_quantity = ?, status = ? WHERE product_id = ?");
-    $stmt->execute([$stock_quantity, $status, $product_id]);
-    
+// Verify product belongs to vendor
+$verify_sql = "SELECT product_id FROM products WHERE product_id = ? AND vendor_id = ?";
+$stmt = $conn->prepare($verify_sql);
+$stmt->bind_param("ii", $product_id, $vendor_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo json_encode(["status" => "error", "message" => "Product not found or doesn't belong to this vendor"]);
+    exit;
+}
+
+// Update stock
+$update_sql = "UPDATE products SET 
+    stock_quantity = ?,
+    updated_at = NOW()
+WHERE product_id = ? AND vendor_id = ?";
+
+$stmt = $conn->prepare($update_sql);
+$stmt->bind_param("iii", $stock_quantity, $product_id, $vendor_id);
+
+if ($stmt->execute()) {
     echo json_encode([
-        'status' => 'success',
-        'message' => 'Stock updated successfully',
-        'new_stock' => $stock_quantity,
-        'product_status' => $status
+        "status" => "success", 
+        "message" => "Stock updated successfully",
+        "product_id" => $product_id,
+        "new_stock" => $stock_quantity
     ]);
-} catch (PDOException $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+} else {
+    echo json_encode(["status" => "error", "message" => "Failed to update stock"]);
 }
+
+$conn->close();
 ?>

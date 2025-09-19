@@ -1,21 +1,6 @@
+
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-header("Content-Type: application/json");
-
-// DB Connection
-$servername = "localhost";
-$username   = "root";
-$password   = "";
-$dbname     = "DailyGro";
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode(["status" => "error", "message" => "Database connection failed"]);
-    exit;
-}
+require_once '../config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -33,176 +18,139 @@ switch ($method) {
         deleteAddress();
         break;
     default:
-        echo json_encode(["status" => "error", "message" => "Method not allowed"]);
+        sendResponse('error', 'Method not allowed');
 }
 
 function getAddresses() {
-    global $conn;
+    global $pdo;
     
-    if (!isset($_GET['user_id']) || empty($_GET['user_id'])) {
-        echo json_encode(["status" => "error", "message" => "User ID is required"]);
-        exit;
+    $userId = $_GET['user_id'] ?? '';
+    if (empty($userId)) {
+        sendResponse('error', 'User ID required');
     }
-
-    $userId = intval($_GET['user_id']);
-
-    $sql = "SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $addresses = [];
-    while ($row = $result->fetch_assoc()) {
-        $addresses[] = $row;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC");
+        $stmt->execute([$userId]);
+        $addresses = $stmt->fetchAll();
+        
+        sendResponse('success', 'Addresses retrieved successfully', ['addresses' => $addresses]);
+        
+    } catch(PDOException $e) {
+        sendResponse('error', 'Failed to get addresses: ' . $e->getMessage());
     }
-
-    echo json_encode([
-        "status" => "success",
-        "message" => "Addresses retrieved successfully",
-        "addresses" => $addresses
-    ]);
-
-    $stmt->close();
 }
 
 function addAddress() {
-    global $conn;
+    global $pdo;
     
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    $required = ['user_id', 'title', 'name', 'phone', 'address_line', 'city', 'state', 'pincode'];
-    foreach ($required as $field) {
-        if (!isset($data[$field]) || empty($data[$field])) {
-            echo json_encode(["status" => "error", "message" => ucfirst(str_replace('_', ' ', $field)) . " is required"]);
-            exit;
-        }
-    }
-
-    $conn->begin_transaction();
-
+    $input = json_decode(file_get_contents('php://input'), true);
+    validateRequired(['user_id', 'title', 'name', 'phone', 'address_line', 'city', 'state', 'pincode'], $input);
+    
     try {
-        // If this is default address, unset other defaults
-        if ($data['is_default'] ?? false) {
-            $stmt = $conn->prepare("UPDATE addresses SET is_default = 0 WHERE user_id = ?");
-            $stmt->bind_param("i", $data['user_id']);
-            $stmt->execute();
-            $stmt->close();
-        }
-
-        $isDefault = ($data['is_default'] ?? false) ? 1 : 0;
+        $pdo->beginTransaction();
         
-        $sql = "INSERT INTO addresses (user_id, title, name, phone, address_line, landmark, city, state, pincode, latitude, longitude, is_default, address_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param(
-            "issssssssdds",
-            $data['user_id'],
-            $data['title'],
-            $data['name'],
-            $data['phone'],
-            $data['address_line'],
-            $data['landmark'] ?? null,
-            $data['city'],
-            $data['state'],
-            $data['pincode'],
-            $data['latitude'] ?? null,
-            $data['longitude'] ?? null,
-            $isDefault,
-            $data['address_type'] ?? 'home'
-        );
-        $stmt->execute();
-
-        $conn->commit();
-        echo json_encode(["status" => "success", "message" => "Address added successfully", "address_id" => $conn->insert_id]);
-        $stmt->close();
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo json_encode(["status" => "error", "message" => "Failed to add address: " . $e->getMessage()]);
+        // If this is default address, unset other defaults
+        if ($input['is_default'] ?? false) {
+            $stmt = $pdo->prepare("UPDATE addresses SET is_default = FALSE WHERE user_id = ?");
+            $stmt->execute([$input['user_id']]);
+        }
+        
+        $stmt = $pdo->prepare("
+            INSERT INTO addresses (user_id, title, name, phone, address_line, landmark, city, state, pincode, latitude, longitude, is_default, address_type) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $input['user_id'],
+            $input['title'],
+            $input['name'],
+            $input['phone'],
+            $input['address_line'],
+            $input['landmark'] ?? '',
+            $input['city'],
+            $input['state'],
+            $input['pincode'],
+            $input['latitude'] ?? null,
+            $input['longitude'] ?? null,
+            $input['is_default'] ?? false,
+            $input['address_type'] ?? 'home'
+        ]);
+        
+        $pdo->commit();
+        sendResponse('success', 'Address added successfully', ['address_id' => $pdo->lastInsertId()]);
+        
+    } catch(PDOException $e) {
+        $pdo->rollBack();
+        sendResponse('error', 'Failed to add address: ' . $e->getMessage());
     }
 }
 
 function updateAddress() {
-    global $conn;
+    global $pdo;
     
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (!isset($data['address_id']) || empty($data['address_id'])) {
-        echo json_encode(["status" => "error", "message" => "Address ID is required"]);
-        exit;
-    }
-
-    $conn->begin_transaction();
-
+    $input = json_decode(file_get_contents('php://input'), true);
+    validateRequired(['address_id'], $input);
+    
     try {
+        $pdo->beginTransaction();
+        
         // If this is default address, unset other defaults
-        if ($data['is_default'] ?? false) {
-            $stmt = $conn->prepare("SELECT user_id FROM addresses WHERE address_id = ?");
-            $stmt->bind_param("i", $data['address_id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $address = $result->fetch_assoc();
-            $stmt->close();
-
+        if ($input['is_default'] ?? false) {
+            $stmt = $pdo->prepare("SELECT user_id FROM addresses WHERE address_id = ?");
+            $stmt->execute([$input['address_id']]);
+            $address = $stmt->fetch();
+            
             if ($address) {
-                $stmt = $conn->prepare("UPDATE addresses SET is_default = 0 WHERE user_id = ?");
-                $stmt->bind_param("i", $address['user_id']);
-                $stmt->execute();
-                $stmt->close();
+                $stmt = $pdo->prepare("UPDATE addresses SET is_default = FALSE WHERE user_id = ?");
+                $stmt->execute([$address['user_id']]);
             }
         }
-
-        $isDefault = ($data['is_default'] ?? false) ? 1 : 0;
         
-        $sql = "UPDATE addresses SET title = ?, name = ?, phone = ?, address_line = ?, landmark = ?, city = ?, state = ?, pincode = ?, is_default = ?, address_type = ? WHERE address_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param(
-            "ssssssssssi",
-            $data['title'] ?? '',
-            $data['name'] ?? '',
-            $data['phone'] ?? '',
-            $data['address_line'] ?? '',
-            $data['landmark'] ?? null,
-            $data['city'] ?? '',
-            $data['state'] ?? '',
-            $data['pincode'] ?? '',
-            $isDefault,
-            $data['address_type'] ?? 'home',
-            $data['address_id']
-        );
-        $stmt->execute();
-
-        $conn->commit();
-        echo json_encode(["status" => "success", "message" => "Address updated successfully"]);
-        $stmt->close();
-
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo json_encode(["status" => "error", "message" => "Failed to update address: " . $e->getMessage()]);
+        $stmt = $pdo->prepare("
+            UPDATE addresses SET 
+            title = ?, name = ?, phone = ?, address_line = ?, landmark = ?, 
+            city = ?, state = ?, pincode = ?, is_default = ?, address_type = ?
+            WHERE address_id = ?
+        ");
+        $stmt->execute([
+            $input['title'] ?? '',
+            $input['name'] ?? '',
+            $input['phone'] ?? '',
+            $input['address_line'] ?? '',
+            $input['landmark'] ?? '',
+            $input['city'] ?? '',
+            $input['state'] ?? '',
+            $input['pincode'] ?? '',
+            $input['is_default'] ?? false,
+            $input['address_type'] ?? 'home',
+            $input['address_id']
+        ]);
+        
+        $pdo->commit();
+        sendResponse('success', 'Address updated successfully');
+        
+    } catch(PDOException $e) {
+        $pdo->rollBack();
+        sendResponse('error', 'Failed to update address: ' . $e->getMessage());
     }
 }
 
 function deleteAddress() {
-    global $conn;
+    global $pdo;
     
-    if (!isset($_GET['address_id']) || empty($_GET['address_id'])) {
-        echo json_encode(["status" => "error", "message" => "Address ID is required"]);
-        exit;
+    $addressId = $_GET['address_id'] ?? '';
+    if (empty($addressId)) {
+        sendResponse('error', 'Address ID required');
     }
-
-    $addressId = intval($_GET['address_id']);
-
-    $stmt = $conn->prepare("DELETE FROM addresses WHERE address_id = ?");
-    $stmt->bind_param("i", $addressId);
     
-    if ($stmt->execute()) {
-        echo json_encode(["status" => "success", "message" => "Address deleted successfully"]);
-    } else {
-        echo json_encode(["status" => "error", "message" => "Failed to delete address"]);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM addresses WHERE address_id = ?");
+        $stmt->execute([$addressId]);
+        
+        sendResponse('success', 'Address deleted successfully');
+        
+    } catch(PDOException $e) {
+        sendResponse('error', 'Failed to delete address: ' . $e->getMessage());
     }
-
-    $stmt->close();
 }
-
-$conn->close();
 ?>

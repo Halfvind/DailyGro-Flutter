@@ -13,7 +13,11 @@ class OrderRepository extends GetxService {
     required double totalAmount,
     required int addressId,
     required String paymentMethod,
+    required deliveryfee,
+    required discountamount,
+    required couponcode,
     required List<Map<String, dynamic>> items,
+
   }) {
     var data ={
       'user_id': userId,
@@ -21,6 +25,9 @@ class OrderRepository extends GetxService {
       'address_id': addressId,
       'payment_method': paymentMethod,
       'items': items,
+      'delivery_fee':deliveryfee??'',
+      'coupon_code':couponcode??'',
+      'discount_amount':discountamount??''
     };
 
     print('creating order body data :$data');

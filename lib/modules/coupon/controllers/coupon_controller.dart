@@ -20,19 +20,36 @@ class CouponController extends GetxController {
   void _initializeServices() {
     try {
       _couponRepository = Get.find<CouponRepository>();
+    } catch (e) {
+      print('CouponRepository not found, creating new instance');
+      _couponRepository = Get.put(CouponRepository());
+    }
+    
+    try {
       _globalController = Get.find<GlobalController>();
     } catch (e) {
-      print('Error initializing coupon services: $e');
+      print('GlobalController not found: $e');
     }
   }
 
   Future<void> loadCoupons() async {
-    if (_couponRepository == null || _globalController == null) return;
+    // Re-initialize services if needed
+    if (_couponRepository == null || _globalController == null) {
+      _initializeServices();
+    }
+    
+    if (_couponRepository == null || _globalController == null) {
+      print('CouponController: Services not available');
+      return;
+    }
 
     isLoading.value = true;
     int userIdInt = _globalController!.userId.value;
+    print('Loading coupons for user ID: $userIdInt');
+    
     try {
       final response = await _couponRepository!.getCoupons(userIdInt);
+      print('Coupon API response: ${response.body}');
 
       if (response.isOk && response.body['status'] == 'success') {
         final List<dynamic> couponList = response.body['coupons'] ?? [];
@@ -40,7 +57,9 @@ class CouponController extends GetxController {
             .map((json) => CouponModel.fromJson(json))
             .where((coupon) => coupon.status == 'active')
             .toList();
+        print('Loaded ${coupons.length} active coupons');
       } else {
+        print('Coupon API failed: ${response.body}');
         Get.snackbar('Error', response.body['message'] ?? 'Failed to load coupons');
       }
     } catch (e) {
@@ -64,13 +83,17 @@ class CouponController extends GetxController {
     return selectedCoupon.value?.getDiscountAmount(orderAmount) ?? 0;
   }
 
- /* bool isCouponEligible(CouponModel coupon, double orderAmount) {
-    return orderAmount >= coupon.minOrderAmount && 
-           coupon.validUntil.isAfter(DateTime.now()) &&
-           coupon.status == 'active';
-  }*/
+  bool isCouponEligible(CouponModel coupon, double orderAmount) {
+    final validUntil = DateTime.tryParse(coupon.validUntil); // convert String to DateTime
+    if (validUntil == null) return false; // invalid date
+    return coupon.status == 'active' &&
+        validUntil.isAfter(DateTime.now()) &&
+        orderAmount >= coupon.minOrderAmount;
+  }
 
- /* List<CouponModel> getEligibleCoupons(double orderAmount) {
+
+
+/* List<CouponModel> getEligibleCoupons(double orderAmount) {
     return coupons.where((coupon) => isCouponEligible(coupon, orderAmount)).toList();
   }*/
 }

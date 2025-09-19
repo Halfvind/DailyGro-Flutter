@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../models/api_product_model.dart';
 import '../repositories/products_repository.dart';
+import '../../../data/api/api_client.dart';
 
 class ProductsController extends GetxController {
   ProductsRepository? _productsRepository;
@@ -19,6 +20,13 @@ class ProductsController extends GetxController {
       _productsRepository = Get.find<ProductsRepository>();
     } catch (e) {
       print('Error initializing products services: $e');
+      // Try to create it if not found
+      try {
+        Get.put(ProductsRepository());
+        _productsRepository = Get.find<ProductsRepository>();
+      } catch (e2) {
+        print('Failed to create ProductsRepository: $e2');
+      }
     }
   }
 
@@ -30,10 +38,21 @@ class ProductsController extends GetxController {
     try {
       final response = await _productsRepository!.getProducts(categoryId: categoryId);
 
+      print('Category products API response: ${response.body}');
       if (response.isOk) {
         final List<dynamic> productList = response.body['products'] ?? [];
-        products.value = productList.map((json) => ApiProductModel.fromJson(json)).toList();
+        print('Category products count: ${productList.length}');
+        products.value = productList.map((json) {
+          try {
+            return ApiProductModel.fromJson(json);
+          } catch (e) {
+            print('Error parsing category product JSON: $e');
+            print('Problematic JSON: $json');
+            rethrow;
+          }
+        }).toList();
       } else {
+        print('Category products API error: ${response.body}');
         Get.snackbar('Error', response.body['message'] ?? 'Failed to load products');
       }
     } catch (e) {
@@ -50,10 +69,20 @@ class ProductsController extends GetxController {
 
     try {
       final response = await _productsRepository!.getFeaturedProducts();
+      print('Featured products API response: ${response.body}');
 
       if (response.isOk) {
         final List<dynamic> productList = response.body['products'] ?? [];
-        products.value = productList.map((json) => ApiProductModel.fromJson(json)).toList();
+        print('Featured products count: ${productList.length}');
+        products.value = productList.map((json) {
+          try {
+            return ApiProductModel.fromJson(json);
+          } catch (e) {
+            print('Error parsing featured product JSON: $e');
+            print('Problematic JSON: $json');
+            rethrow;
+          }
+        }).toList();
       }
     } catch (e) {
       print('Error loading featured products: $e');
@@ -69,10 +98,20 @@ class ProductsController extends GetxController {
 
     try {
       final response = await _productsRepository!.getRecommendedProducts();
+      print('Recommended products API response: ${response.body}');
 
       if (response.isOk) {
         final List<dynamic> productList = response.body['products'] ?? [];
-        products.value = productList.map((json) => ApiProductModel.fromJson(json)).toList();
+        print('Recommended products count: ${productList.length}');
+        products.value = productList.map((json) {
+          try {
+            return ApiProductModel.fromJson(json);
+          } catch (e) {
+            print('Error parsing recommended product JSON: $e');
+            print('Problematic JSON: $json');
+            rethrow;
+          }
+        }).toList();
       }
     } catch (e) {
       print('Error loading recommended products: $e');

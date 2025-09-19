@@ -1,59 +1,94 @@
 <?php
-require_once '../config.php';
-header('Content-Type: application/json');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-$vendor_id = $_GET['vendor_id'] ?? null;
-$type = $_GET['type'] ?? 'all';
+header("Content-Type: application/json");
 
-if (!$vendor_id) {
-    echo json_encode(['status' => 'error', 'message' => 'Vendor ID required']);
+// DB Connection
+$servername = "localhost";
+$username   = "root";
+$password   = "";
+$dbname     = "DailyGro";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    echo json_encode(["status" => "error", "message" => "Database connection failed"]);
     exit;
 }
 
-try {
-    // Build query based on type
-    $whereClause = "WHERE p.vendor_id = ?";
-    $params = [$vendor_id];
-    
-    switch ($type) {
-        case 'low':
-            $whereClause .= " AND p.stock_quantity > 0 AND p.stock_quantity <= 10";
-            break;
-        case 'out_of_stock':
-            $whereClause .= " AND p.stock_quantity = 0";
-            break;
-        case 'all':
-        default:
-            // No additional filter
-            break;
-    }
-    
-    // Get products
-    $stmt = $pdo->prepare("SELECT p.*, c.name as category_name 
-                          FROM products p 
-                          JOIN categories c ON p.category_id = c.category_id 
-                          $whereClause
-                          ORDER BY p.stock_quantity ASC, p.name ASC");
-    $stmt->execute($params);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Get summary counts
-    $stmt = $pdo->prepare("SELECT 
-                          COUNT(*) as total_products,
-                          SUM(CASE WHEN stock_quantity > 0 AND stock_quantity <= 10 THEN 1 ELSE 0 END) as low_stock_count,
-                          SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock_count
-                          FROM products WHERE vendor_id = ?");
-    $stmt->execute([$vendor_id]);
-    $summary = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Stock data retrieved successfully',
-        'products' => $products,
-        'summary' => $summary,
-        'filter_type' => $type
-    ]);
-} catch (PDOException $e) {
-    echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+$vendor_id = intval($_GET['vendor_id'] ?? 0);
+$type = $_GET['type'] ?? 'all';
+
+if (empty($vendor_id)) {
+    echo json_encode(["status" => "error", "message" => "Vendor ID is required"]);
+    exit;
 }
+
+// Build query based on type
+$sql = "SELECT 
+    p.product_id,
+    p.product_name as name,
+    p.description,
+    p.price,
+    p.stock_quantity,
+    p.status,
+    p.image_url as image,
+    c.category_name,
+    p.created_at
+FROM products p
+LEFT JOIN categories c ON p.category_id = c.category_id
+WHERE p.vendor_id = ?";
+
+switch ($type) {
+    case 'low':
+        $sql .= " AND p.stock_quantity > 0 AND p.stock_quantity <= 10";
+        break;
+    case 'out_of_stock':
+        $sql .= " AND p.stock_quantity = 0";
+        break;
+    case 'list_products':
+    case 'all':
+    default:
+        // No additional filter for all products
+        break;
+}
+
+$sql .= " ORDER BY p.created_at DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $vendor_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$products = [];
+$total_products = 0;
+$low_stock_count = 0;
+$out_of_stock_count = 0;
+
+while ($row = $result->fetch_assoc()) {
+    $products[] = $row;
+    $total_products++;
+    
+    if ($row['stock_quantity'] == 0) {
+        $out_of_stock_count++;
+    } elseif ($row['stock_quantity'] <= 10) {
+        $low_stock_count++;
+    }
+}
+
+echo json_encode([
+    "status" => "success",
+    "message" => "Products fetched successfully",
+    "data" => $products,
+    "products" => $products, // For backward compatibility
+    "summary" => [
+        "total_products" => $total_products,
+        "low_stock_count" => $low_stock_count,
+        "out_of_stock_count" => $out_of_stock_count
+    ]
+]);
+
+$conn->close();
 ?>

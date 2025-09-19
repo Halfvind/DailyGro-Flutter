@@ -207,7 +207,7 @@ class ApiProductCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          '₹${product.price.toStringAsFixed(0)}',
+          '₹${product.price}',
           style: TextStyle(
             fontSize: AppSizes.font(16),
             fontWeight: FontWeight.w700,
@@ -218,7 +218,7 @@ class ApiProductCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '₹${product.originalPrice.toStringAsFixed(0)}',
+                '₹${product.originalPrice}',
                 style: TextStyle(
                   fontSize: AppSizes.font(10),
                   color: Colors.grey[500],

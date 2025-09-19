@@ -63,6 +63,9 @@ class OrderController extends GetxController {
     required int addressId,
     required String paymentMethod,
     required List<Map<String, dynamic>> items,
+    required  deliveryfee,
+    required discountamount,
+    required couponcode
   }) async {
     if (_orderRepository == null || _globalController == null) return;
 
@@ -75,6 +78,10 @@ class OrderController extends GetxController {
         addressId: addressId,
         paymentMethod: paymentMethod,
         items: items,
+        deliveryfee:deliveryfee,
+        discountamount: discountamount,
+        couponcode: couponcode,
+
       );
 
       if (response.isOk) {
