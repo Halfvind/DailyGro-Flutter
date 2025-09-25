@@ -36,7 +36,6 @@ class MyApp extends StatelessWidget {
         if (!Get.isRegistered<GlobalController>()) {
           Get.put(GlobalController());
         }
-        
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'DailyGro',

@@ -31,18 +31,39 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isFeatured = false;
   bool _isRecommended = false;
-  
+
   List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _units = [];
   bool _isLoading = true;
   int? _selectedCategoryId;
-  
+
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+    _checkEditMode();
   }
   
+  void _checkEditMode() {
+    final productData = Get.arguments as Map<String, dynamic>?;
+    if (productData != null) {
+      _populateFields(productData);
+    }
+  }
+  
+  void _populateFields(Map<String, dynamic> product) {
+    _nameController.text = product['name'] ?? '';
+    _descriptionController.text = product['description'] ?? '';
+    _priceController.text = product['price']?.toString() ?? '';
+    _originalPriceController.text = product['original_price']?.toString() ?? '';
+    _stockController.text = product['stock_quantity']?.toString() ?? '';
+    _weightController.text = product['weight'] ?? '';
+    _selectedUnit = product['unit'] ?? '';
+    _selectedCategoryId = product['category_id'];
+    _isFeatured = product['is_featured'] == 1;
+    _isRecommended = product['is_recommended'] == 1;
+  }
+
   Future<void> _loadInitialData() async {
     await Future.wait([
       _loadCategories(),
@@ -52,7 +73,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _isLoading = false;
     });
   }
-  
+
   Future<void> _loadCategories() async {
     try {
       final response = await GetConnect().get('http://localhost/dailygro/api/vendor/categories_selection');
@@ -66,7 +87,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       Get.snackbar('Error', 'Failed to load categories');
     }
   }
-  
+
   Future<void> _loadUnits() async {
     try {
       final response = await GetConnect().get('http://localhost/dailygro/api/vendor/units_selection');
@@ -92,27 +113,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildImageSection(),
-                    const SizedBox(height: 20),
-                    _buildBasicInfo(),
-                    const SizedBox(height: 20),
-                    _buildPricingSection(),
-                    const SizedBox(height: 20),
-                    _buildStockSection(),
-                    const SizedBox(height: 20),
-                    _buildFeaturesSection(),
-                    const SizedBox(height: 30),
-                    _buildActionButtons(),
-                  ],
-                ),
-              ),
-            ),
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildImageSection(),
+              const SizedBox(height: 20),
+              _buildBasicInfo(),
+              const SizedBox(height: 20),
+              _buildPricingSection(),
+              const SizedBox(height: 20),
+              _buildStockSection(),
+              const SizedBox(height: 20),
+              _buildFeaturesSection(),
+              const SizedBox(height: 30),
+              _buildActionButtons(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -122,7 +143,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       children: [
         const Text('Product Images', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Container(
+        SizedBox(
           height: 120,
           child: ListView(
             scrollDirection: Axis.horizontal,
@@ -212,9 +233,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
           items: _categories
               .map((cat) => DropdownMenuItem(
-                    value: cat['category_id'],
-                    child: Text(cat['name']),
-                  ))
+            value: cat['category_id'],
+            child: Text(cat['name']),
+          ))
               .toList(),
           onChanged: (value) => setState(() => _selectedCategoryId = value as int?),
         ),
@@ -270,9 +291,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
                 items: _units
                     .map((unit) => DropdownMenuItem(
-                          value: unit['name'],
-                          child: Text(unit['name']),
-                        ))
+                  value: unit['name'],
+                  child: Text(unit['name']),
+                ))
                     .toList(),
                 onChanged: (value) => setState(() => _selectedUnit = value.toString()),
               ),
@@ -305,7 +326,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       ],
     );
   }
-  
+
   Widget _buildFeaturesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +385,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         Expanded(
           child: CommonButton(
             text: 'Add Product',
-            onPressed: _addProduct,
+            onPressed:(){
+              print("objectqqqq");
+              _addProduct(); // ✅ Main method
+            },
           ),
         ),
       ],
@@ -456,72 +480,119 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   void _addProduct() async {
-    if (_formKey.currentState?.validate() == true) {
-      if (_selectedCategoryId == null) {
-        Get.snackbar('Error', 'Please select a category');
-        return;
+    if (_formKey.currentState?.validate() != true) return;
+    if (_selectedCategoryId == null) {
+      Get.snackbar('Error', 'Please select a category');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      List<String> imagePaths = [];
+
+      // Step 1: Upload images if any
+      if (_selectedImages.isNotEmpty) {
+        imagePaths = await _uploadImages();
+        if (imagePaths.isEmpty) {
+          Get.snackbar('Error', 'Failed to upload images');
+          setState(() => _isLoading = false);
+          return;
+        }
       }
 
-      setState(() => _isLoading = true);
+      // Step 2: Send product details
+      final globalController = Get.find<GlobalController>();
+      final vendorIdValue = globalController.vendorId.value;
 
+      // Check if editing existing product
+      final existingProduct = Get.arguments as Map<String, dynamic>?;
+      final isEditing = existingProduct != null;
+      
+      final apiUrl = isEditing 
+          ? 'http://localhost/dailygro/api/vendor/update_stock'
+          : 'http://localhost/dailygro/api/vendor/add_product';
+
+      final productData = {
+        'vendor_id': vendorIdValue.toString(),
+        'category_id': _selectedCategoryId.toString(),
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'price': _priceController.text,
+        'original_price': _originalPriceController.text,
+        'stock_quantity': _stockController.text,
+        'unit': _selectedUnit,
+        'weight': _weightController.text.trim(),
+        'is_featured': (_isFeatured ? 1 : 0).toString(),
+        'is_recommended': (_isRecommended ? 1 : 0).toString(),
+        'image': imagePaths.isNotEmpty ? imagePaths.first : '',
+        'images': imagePaths.length > 1 ? imagePaths.sublist(1).join(',') : '',
+      };
+      
+      // Add product_id for update API
+      if (isEditing) {
+        productData['product_id'] = existingProduct['product_id'].toString();
+      }
+
+      final response = await GetConnect().post(apiUrl, productData);
+
+      print('Product BOY DATA : $productData');
+      print('RESPONSE  : ${response.body}');
+
+      Map<String, dynamic> jsonResponse = {};
       try {
-        var request = http.MultipartRequest(
-          'POST',
-          Uri.parse('http://localhost/dailygro/api/vendor/add_product'),
-        );
-
-        // Add form fields
-        request.fields['vendor_id'] = Get.find<GlobalController>().vendorId.toString();
-        request.fields['category_id'] = _selectedCategoryId.toString();
-        request.fields['name'] = _nameController.text.trim();
-        request.fields['description'] = _descriptionController.text.trim();
-        request.fields['price'] = _priceController.text;
-        request.fields['original_price'] = _originalPriceController.text;
-        request.fields['stock_quantity'] = _stockController.text;
-        request.fields['unit'] = _selectedUnit;
-        request.fields['weight'] = _weightController.text.trim();
-        request.fields['is_featured'] = (_isFeatured ? 1 : 0).toString();
-        request.fields['is_recommended'] = (_isRecommended ? 1 : 0).toString();
-
-        // Debug print all fields
-        print('>>>> Fields being sent:');
-        request.fields.forEach((key, value) {
-          print('$key: $value');
-        });
-
-        // Add image file if selected
-        if (_selectedImages.isNotEmpty) {
-          print('>>>> Adding image file: ${_selectedImages.first.path}');
-          request.files.add(await http.MultipartFile.fromPath(
-            'image',
-            _selectedImages.first.path,
-          ));
-        } else {
-          print('>>>> No image selected');
-        }
-
-        final response = await request.send();
-        final responseBody = await response.stream.bytesToString();
-        final jsonResponse = json.decode(responseBody);
-
-        print('>>>> Response Status: ${response.statusCode}');
-        print('>>>> Response Body: $jsonResponse');
-
-        if (response.statusCode == 200 && jsonResponse['status'] == 'success') {
-          Get.back();
-          Get.snackbar('Success', 'Product added successfully');
-        } else {
-          Get.snackbar('Error', jsonResponse['message'] ?? 'Failed to add product');
-        }
+        jsonResponse = response.body != null ? Map<String, dynamic>.from(response.body) : {};
       } catch (e) {
-        print('>>>> Exception: $e');
-        Get.snackbar('Error', 'Network error occurred');
-      } finally {
-        setState(() => _isLoading = false);
+        print('Failed to parse JSON: $e');
+        print('Response body: ${response.body}');
       }
+
+      if (response.isOk && jsonResponse['status'] == 'success') {
+        Get.back();
+        Get.snackbar('Success', isEditing ? 'Product updated successfully' : 'Product added successfully');
+      } else {
+        Get.snackbar('Error', jsonResponse['message'] ?? (isEditing ? 'Failed to update product' : 'Failed to add product'));
+      }
+    } catch (e) {
+      print('Exception: $e');
+      Get.snackbar('Error', 'Network error occurred');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
+  Future<List<String>> _uploadImages() async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://localhost/dailygro/api/upload_image'),
+      );
+
+      for (var file in _selectedImages) {
+        request.files.add(await http.MultipartFile.fromPath('images[]', file.path));
+      }
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      print('Image upload response: $responseBody');
+
+      Map<String, dynamic> jsonResponse = {};
+      try {
+        jsonResponse = json.decode(responseBody);
+      } catch (e) {
+        print('Failed to parse image JSON: $e');
+        return [];
+      }
+
+      if (jsonResponse['status'] == 'success') {
+        return List<String>.from(jsonResponse['files'].map((f) => f['short_path']));
+      }
+    } catch (e) {
+      print('Image upload error: $e');
+    }
+    return [];
+  }
 
   @override
   void dispose() {

@@ -77,7 +77,7 @@ class WalletSummary extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      // Add money functionality
+                      _showAddMoneyDialog(walletController!);
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -300,6 +300,180 @@ class WalletSummary extends StatelessWidget {
         ),
       ),
       isScrollControlled: true,
+    );
+  }
+
+  void _showAddMoneyDialog(WalletController walletController) {
+    final TextEditingController amountController = TextEditingController();
+    final List<double> quickAmounts = [50, 100, 200, 500, 1000];
+    final selectedAmount = 0.0.obs;
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radius(16)),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(AppSizes.width(20)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Add Money to Wallet',
+                style: TextStyle(
+                  fontSize: AppSizes.fontL,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: AppSizes.height(20)),
+              
+              // Quick amount buttons
+              Text(
+                'Quick Add',
+                style: TextStyle(
+                  fontSize: AppSizes.fontM,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: AppSizes.height(12)),
+              
+              Wrap(
+                spacing: AppSizes.width(8),
+                runSpacing: AppSizes.height(8),
+                children: quickAmounts.map((amount) {
+                  return Obx(() => GestureDetector(
+                    onTap: () {
+                      selectedAmount.value = amount;
+                      amountController.text = amount.toInt().toString();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSizes.width(16),
+                        vertical: AppSizes.height(8),
+                      ),
+                      decoration: BoxDecoration(
+                        color: selectedAmount.value == amount 
+                            ? Colors.green 
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(AppSizes.radius(20)),
+                      ),
+                      child: Text(
+                        '₹${amount.toInt()}',
+                        style: TextStyle(
+                          color: selectedAmount.value == amount 
+                              ? Colors.white 
+                              : Colors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ));
+                }).toList(),
+              ),
+              
+              SizedBox(height: AppSizes.height(20)),
+              
+              // Custom amount input
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Enter Amount',
+                  prefixText: '₹',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radius(8)),
+                  ),
+                ),
+                onChanged: (value) {
+                  selectedAmount.value = double.tryParse(value) ?? 0.0;
+                },
+              ),
+              
+              SizedBox(height: AppSizes.height(24)),
+              
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Get.back(),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: AppSizes.fontM,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: AppSizes.width(12)),
+                  Expanded(
+                    child: Obx(() => ElevatedButton(
+                      onPressed: walletController.isLoading.value
+                          ? null
+                          : () async {
+                              final amount = double.tryParse(amountController.text);
+                              if (amount == null || amount <= 0) {
+                                Get.snackbar(
+                                  'Invalid Amount',
+                                  'Please enter a valid amount',
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                                return;
+                              }
+                              
+                              final success = await walletController.addMoney(amount);
+                              Get.back();
+                              
+                              if (success) {
+                                Get.snackbar(
+                                  'Success',
+                                  '₹${amount.toInt()} added to wallet',
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                );
+                              } else {
+                                Get.snackbar(
+                                  'Failed',
+                                  'Failed to add money. Please try again.',
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppSizes.radius(8)),
+                        ),
+                      ),
+                      child: walletController.isLoading.value
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'Add Money',
+                              style: TextStyle(
+                                fontSize: AppSizes.fontM,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    )),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

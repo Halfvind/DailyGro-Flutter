@@ -10,6 +10,8 @@ import '../CommonComponents/controllers/global_controller.dart';
 import '../modules/address/repositories/address_repository.dart';
 import '../modules/wallet/repositories/wallet_repository.dart';
 import '../modules/vendor/repositories/vendor_repository.dart';
+import '../modules/category/repositories/category_repository.dart';
+import '../modules/category/controllers/category_controller.dart';
 import '../data/repositories/rider_repository.dart';
 import '../models/cart_item_model.dart';
 import '../modules/auth/login_controller.dart';
@@ -74,6 +76,8 @@ class AppPages {
         if (!Get.isRegistered<ProfileApiService>()) Get.lazyPut(() => ProfileApiService());
         if (!Get.isRegistered<AddressRepository>()) Get.lazyPut(() => AddressRepository());
         if (!Get.isRegistered<WalletRepository>()) Get.lazyPut(() => WalletRepository());
+        if (!Get.isRegistered<CategoryRepository>()) Get.lazyPut(() => CategoryRepository());
+        if (!Get.isRegistered<CategoryController>()) Get.lazyPut(() => CategoryController());
       }),
     ),
     GetPage(
@@ -85,6 +89,8 @@ class AppPages {
         if (!Get.isRegistered<ProfileApiService>()) Get.lazyPut(() => ProfileApiService());
         if (!Get.isRegistered<AddressRepository>()) Get.lazyPut(() => AddressRepository());
         if (!Get.isRegistered<WalletRepository>()) Get.lazyPut(() => WalletRepository());
+        if (!Get.isRegistered<CategoryRepository>()) Get.lazyPut(() => CategoryRepository());
+        if (!Get.isRegistered<CategoryController>()) Get.lazyPut(() => CategoryController());
       }),
     ),
     GetPage(

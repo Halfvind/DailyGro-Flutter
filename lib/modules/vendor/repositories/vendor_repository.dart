@@ -91,22 +91,36 @@ class VendorRepository extends GetxService {
     return _apiClient?.post('vendor/add_product', productData);
   }
 
-  Future<Response> getStockManagement(int vendorId, String type) async {
-    print('PRINTING THE BODY DATA OF VENDOR STOCK MANAGEMENT $vendorId$type');
+  Future<Response> getStockManagement(int vendorId, String type, [String search = '']) async {
     if (_apiClient == null) {
-      return Response(statusCode: 500, body: {'status': 'error', 'message': 'API client not available'});
+      return const Response(statusCode: 500, body: {'status': 'error', 'message': 'API client not available'});
     }
-    return _apiClient!.get('vendor/stock_management?vendor_id=$vendorId&type=$type');
+    String url = 'vendor/stock_management?vendor_id=$vendorId&type=$type';
+    if (search.isNotEmpty) {
+      url += '&search=$search';
+    }
+    return _apiClient!.get(url);
   }
 
   Future<Response> updateStock(int productId, int vendorId, int stockQuantity) async {
     if (_apiClient == null) {
-      return Response(statusCode: 500, body: {'status': 'error', 'message': 'API client not available'});
+      return const Response(statusCode: 500, body: {'status': 'error', 'message': 'API client not available'});
     }
     return _apiClient!.post('vendor/update_stock', {
       'product_id': productId,
       'vendor_id': vendorId,
       'stock_quantity': stockQuantity,
+    });
+  }
+
+  Future<Response> updateProductStatus(int productId, int vendorId, String status) async {
+    if (_apiClient == null) {
+      return const Response(statusCode: 500, body: {'status': 'error', 'message': 'API client not available'});
+    }
+    return _apiClient!.post('vendor/update_stock', {
+      'product_id': productId,
+      'vendor_id': vendorId,
+      'status': status,
     });
   }
   

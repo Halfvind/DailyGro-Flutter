@@ -11,8 +11,14 @@ class StockManagementController extends GetxController {
   final products = <Map<String, dynamic>>[].obs;
   final selectedFilter = 'all'.obs;
   final totalProducts = 0.obs;
+  final totalProductsCount = 0.obs;
+  final totalLowStockProductsCount = 0.obs;
+  final totalOutOfStockProductsCount = 0.obs;
+  final totalInactiveProductsCount = 0.obs;
   final lowStockCount = 0.obs;
   final outOfStockCount = 0.obs;
+  final inactiveCount = 0.obs;
+  final searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -38,7 +44,7 @@ class StockManagementController extends GetxController {
     }
   }
 
-  Future<void> loadProducts({String type = 'all'}) async {
+  Future<void> loadProducts({String type = 'all', String search = ''}) async {
     if (_repository == null || _globalController == null) {
       print('Dependencies not initialized');
       return;
@@ -46,33 +52,37 @@ class StockManagementController extends GetxController {
     
     isLoading.value = true;
     selectedFilter.value = type;
-    print('Loading products for vendor: ${_globalController!.vendorId.value}, type: $type');
+    searchQuery.value = search;
     
     try {
-      final response = await _repository!.getStockManagement(_globalController!.vendorId.value, type);
-      print('Stock management API response: ${response.body}');
+      final response = await _repository!.getStockManagement(_globalController!.vendorId.value, type, search);
       
       if (response.isOk && response.body != null) {
         if (response.body['status'] == 'success') {
           products.value = List<Map<String, dynamic>>.from(response.body['products'] ?? []);
+          totalProductsCount.value = response.body['counts']['total'];
+          totalLowStockProductsCount.value = response.body['counts']['low_stock'];
+          totalOutOfStockProductsCount.value = response.body['counts']['out_of_stock'];
+          totalInactiveProductsCount.value = response.body['counts']['inactive'];
           totalProducts.value = response.body['summary']?['total_products'] ?? products.length;
           lowStockCount.value = response.body['summary']?['low_stock_count'] ?? 0;
           outOfStockCount.value = response.body['summary']?['out_of_stock_count'] ?? 0;
-          print('Loaded ${products.length} products');
+          inactiveCount.value = response.body['summary']?['inactive_count'] ?? 0;
         } else {
-          print('API returned error: ${response.body['message']}');
           Get.snackbar('Error', response.body['message'] ?? 'Failed to load products');
         }
       } else {
-        print('API request failed: ${response.statusCode}');
         Get.snackbar('Error', 'Failed to load products');
       }
     } catch (e) {
-      print('Exception loading products: $e');
       Get.snackbar('Error', 'Network error occurred');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void searchProducts(String query) {
+    loadProducts(type: selectedFilter.value, search: query);
   }
 
   Future<void> updateStock(int productId, int newStock) async {
@@ -94,6 +104,27 @@ class StockManagementController extends GetxController {
       }
     } catch (e) {
       print('Exception updating stock: $e');
+      Get.snackbar('Error', 'Network error occurred');
+    }
+  }
+
+  Future<void> updateProductStatus(int productId, String status) async {
+    if (_repository == null || _globalController == null) {
+      print('Dependencies not initialized');
+      return;
+    }
+    
+    try {
+      final response = await _repository!.updateProductStatus(productId, _globalController!.vendorId.value, status);
+      
+      if (response.isOk && response.body != null && response.body['status'] == 'success') {
+        Get.snackbar('Success', 'Product status updated successfully');
+        loadProducts(type: selectedFilter.value);
+      } else {
+        Get.snackbar('Error', response.body['message'] ?? 'Failed to update status');
+      }
+    } catch (e) {
+      print('Exception updating product status: $e');
       Get.snackbar('Error', 'Network error occurred');
     }
   }

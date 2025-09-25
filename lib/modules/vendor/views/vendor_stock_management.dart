@@ -5,8 +5,21 @@ import '../repositories/vendor_repository.dart';
 import '../../../data/api/api_client.dart';
 import '../../../themes/app_colors.dart';
 
-class VendorStockManagement extends StatelessWidget {
+class VendorStockManagement extends StatefulWidget {
   const VendorStockManagement({super.key});
+
+  @override
+  State<VendorStockManagement> createState() => _VendorStockManagementState();
+}
+
+class _VendorStockManagementState extends State<VendorStockManagement> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +53,7 @@ class VendorStockManagement extends StatelessWidget {
         return Column(
           children: [
             _buildStockSummary(controller),
+            _buildSearchBar(controller),
             _buildFilterTabs(controller),
             Expanded(child: _buildProductList(controller)),
           ],
@@ -65,9 +79,10 @@ class VendorStockManagement extends StatelessWidget {
       ),
       child: Obx(() => Row(
         children: [
-          Expanded(child: _buildSummaryCard('Total Products', controller.totalProducts.value.toString(), Icons.inventory, Colors.blue)),
-          Expanded(child: _buildSummaryCard('Low Stock', controller.lowStockCount.value.toString(), Icons.warning, Colors.orange)),
-          Expanded(child: _buildSummaryCard('Out of Stock', controller.outOfStockCount.value.toString(), Icons.error, Colors.red)),
+          Expanded(child: _buildSummaryCard('Total Products', controller.totalProductsCount.value.toString(), Icons.inventory, Colors.blue)),
+          Expanded(child: _buildSummaryCard('Low Stock', controller.totalLowStockProductsCount.value.toString(), Icons.warning, Colors.orange)),
+          Expanded(child: _buildSummaryCard('Out of Stock', controller.totalOutOfStockProductsCount.value.toString(), Icons.error, Colors.red)),
+          Expanded(child: _buildSummaryCard('Inactive', controller.totalInactiveProductsCount.value.toString(), Icons.block, Colors.grey)),
         ],
       )),
     );
@@ -87,15 +102,25 @@ class VendorStockManagement extends StatelessWidget {
   Widget _buildFilterTabs(StockManagementController controller) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Obx(() => Row(
-        children: [
-          Expanded(child: _buildFilterChip('All', 'all', controller)),
-          Expanded(child: _buildFilterChip('Low Stock', 'low', controller)),
-          Expanded(child: _buildFilterChip('Out of Stock', 'out_of_stock', controller)),
-        ],
-      )),
+      child: Obx(
+            () => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildFilterChip('All', 'all', controller),
+              const SizedBox(width: 8),
+              _buildFilterChip('Low Stock', 'low', controller),
+              const SizedBox(width: 8),
+              _buildFilterChip('Out of Stock', 'out_of_stock', controller),
+              const SizedBox(width: 8),
+              _buildFilterChip('Inactive', 'inactive', controller),
+            ],
+          ),
+        ),
+      ),
     );
   }
+
 
   Widget _buildFilterChip(String label, String type, StockManagementController controller) {
     final isSelected = controller.selectedFilter.value == type;
@@ -138,7 +163,7 @@ class VendorStockManagement extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 image: product['image'] != null 
                     ? DecorationImage(
-                        image: NetworkImage('http://localhost/dailygro/uploads/products/${product['image']}'),
+                        image: NetworkImage('${product['image']}'),
                         fit: BoxFit.cover,
                       )
                     : null,
@@ -159,7 +184,11 @@ class VendorStockManagement extends StatelessWidget {
             trailing: PopupMenuButton(
               itemBuilder: (context) => [
                 const PopupMenuItem(value: 'stock', child: Text('Update Stock')),
-                const PopupMenuItem(value: 'disable', child: Text('Disable')),
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(
+                  value: 'toggle_status',
+                  child: Text(product['status'] == 'active' ? 'Disable' : 'Enable'),
+                ),
               ],
               onSelected: (value) => _handleProductAction(value, product, controller),
             ),
@@ -174,8 +203,12 @@ class VendorStockManagement extends StatelessWidget {
       case 'stock':
         _showStockUpdateDialog(product, controller);
         break;
-      case 'disable':
-        Get.snackbar('Success', 'Product disabled');
+      case 'edit':
+        Get.toNamed('/vendor/add-product', arguments: product);
+        break;
+      case 'toggle_status':
+        final newStatus = product['status'] == 'active' ? 'inactive' : 'active';
+        controller.updateProductStatus(product['product_id'], newStatus);
         break;
     }
   }
@@ -204,6 +237,43 @@ class VendorStockManagement extends StatelessWidget {
             child: const Text('Update'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(StockManagementController controller) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search products...',
+          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    controller.searchProducts('');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.grey[50],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.primary, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onChanged: (value) {
+          setState(() {}); // Rebuild to show/hide clear button
+          controller.searchProducts(value);
+        },
       ),
     );
   }

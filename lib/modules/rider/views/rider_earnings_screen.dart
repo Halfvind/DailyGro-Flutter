@@ -5,10 +5,24 @@ import '../../../themes/app_colors.dart';
 import '../../../CommonComponents/CommonWidgets/common_textfield.dart';
 import '../controllers/rider_controller.dart';
 
-class RiderEarningsScreen extends StatelessWidget {
-  final RiderController controller = Get.find<RiderController>();
+class RiderEarningsScreen extends StatefulWidget {
+  const RiderEarningsScreen({super.key});
+
+
+  @override
+  State<RiderEarningsScreen> createState() => _RiderEarningsScreenState();
+}
+
+class _RiderEarningsScreenState extends State<RiderEarningsScreen> {
   final TextEditingController withdrawalController = TextEditingController();
 
+  final RiderController controller = Get.find<RiderController>();
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Future.microtask(() => controller.fetchRiderProfile());
+  }
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -40,7 +54,7 @@ class RiderEarningsScreen extends StatelessWidget {
 
   Widget _buildEarningsTab() {
     return Obx(() => SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -79,13 +93,13 @@ class RiderEarningsScreen extends StatelessWidget {
                     'Request Withdrawal',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   CommonTextField(
                     controller: withdrawalController,
                     labelText: 'Amount',
                     hintText: 'Enter amount to withdraw',
                     keyboardType: TextInputType.number,
-                    prefixIcon:Icon(Icons.attach_money) ,
+                    prefixIcon:const Icon(Icons.attach_money) ,
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -104,20 +118,79 @@ class RiderEarningsScreen extends StatelessWidget {
           SizedBox(height: 24),
 
           // Earnings History
-          Text(
+          const Text(
             'Earnings History',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 16),
-          Center(
-            child: Column(
-              children: [
-                Icon(Icons.history, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('No earnings history available', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-          ),
+          const SizedBox(height: 16),
+          controller.riderProfile.value?.earningsHistory.isEmpty ?? true
+              ? const Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.history, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text('No earnings history available', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: controller.riderProfile.value?.earningsHistory.length ?? 0,
+                  itemBuilder: (context, index) {
+                    final earning = controller.riderProfile.value!.earningsHistory[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.delivery_dining, color: Colors.green),
+                        ),
+                        title: Text(
+                          earning.orderNumber,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          earning.date.split(' ')[0], // Show only date part
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '₹${earning.amount.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: earning.status == 'delivered' ? Colors.green : Colors.orange,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                earning.status.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ],
       ),
     ));
@@ -166,7 +239,7 @@ class RiderEarningsScreen extends StatelessWidget {
   Widget _buildWithdrawalStatusChip(String status) {
     Color color;
     IconData icon;
-    
+
     switch (status) {
       case 'pending':
         color = Colors.orange;
@@ -188,7 +261,7 @@ class RiderEarningsScreen extends StatelessWidget {
         color = Colors.grey;
         icon = Icons.help;
     }
-    
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

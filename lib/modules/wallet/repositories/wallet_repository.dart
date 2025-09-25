@@ -33,4 +33,17 @@ class WalletRepository extends GetxService {
     }
     return _apiClient!.get('users/wallet_transactions?wallet_id=$walletId');
   }
+
+  Future<Response> addMoney(int userId, double amount) async {
+    if (_apiClient == null) {
+      return Response(
+        statusCode: 500,
+        body: {'status': 'error', 'message': 'API client not available'},
+      );
+    }
+    return _apiClient!.post('users/wallet', {
+      'user_id': userId,
+      'amount': amount,
+    });
+  }
 }

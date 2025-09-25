@@ -27,11 +27,11 @@ class ProductDetailView extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
         
         if (controller.productDetail.value == null) {
-          return Center(
+          return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -43,7 +43,8 @@ class ProductDetailView extends StatelessWidget {
           );
         }
         
-        final product = controller.productDetail.value!;
+        final product = controller.productDetail.value!.product;
+        final similarProduct = controller.productDetail.value!.similarProducts;
         
         return CustomScrollView(
           slivers: [
@@ -53,24 +54,27 @@ class ProductDetailView extends StatelessWidget {
               pinned: true,
               backgroundColor: AppColors.primary,
               flexibleSpace: FlexibleSpaceBar(
-                background: product.image != null
+                background: product?.image != null
                     ? Image.network(
-                        'http://localhost/dailygro/uploads/${product.image}',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: Icon(Icons.image, size: 64, color: Colors.grey),
-                          );
-                        },
-                      )
+                  product!.image!.startsWith("http")
+                      ? product.image!
+                      : "http://localhost/dailygro/uploads/${product.image}",
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Icon(Icons.image, size: 64, color: Colors.grey),
+                    );
+                  },
+                )
                     : Container(
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image, size: 64, color: Colors.grey),
-                      ),
+                  color: Colors.grey[200],
+                  child: Icon(Icons.image, size: 64, color: Colors.grey),
+                ),
               ),
             ),
-            
+
+
             // Product Details
             SliverToBoxAdapter(
               child: Padding(
@@ -80,7 +84,7 @@ class ProductDetailView extends StatelessWidget {
                   children: [
                     // Product Name
                     Text(
-                      product.name,
+                      product!.name,
                       style: TextStyle(
                         fontSize: AppSizes.fontXXL,
                         fontWeight: FontWeight.bold,
@@ -95,7 +99,7 @@ class ProductDetailView extends StatelessWidget {
                         children: [
                           Icon(Icons.star, color: Colors.amber, size: AppSizes.fontL),
                           SizedBox(width: AppSizes.width(4)),
-                          Text('${product.rating.toStringAsFixed(1)} (${product.reviewCount} reviews)'),
+                          Text('${product.rating.toStringAsFixed(1)} (reviews)'),
                         ],
                       ),
                     
@@ -124,7 +128,7 @@ class ProductDetailView extends StatelessWidget {
                           ),
                           SizedBox(width: AppSizes.width(8)),
                           Text(
-                            '${product.discountPercentage}% OFF',
+                            '${product.discountType}% OFF',
                             style: TextStyle(
                               fontSize: AppSizes.fontM,
                               color: Colors.green,
@@ -210,7 +214,8 @@ class ProductDetailView extends StatelessWidget {
                     SizedBox(height: AppSizes.height(24)),
                     
                     // Similar Products
-                    if (product.similarProducts.isNotEmpty) ...[
+
+                    if (similarProduct.isNotEmpty) ...[
                       Text(
                         'Similar Products',
                         style: TextStyle(
@@ -226,9 +231,52 @@ class ProductDetailView extends StatelessWidget {
                           crossAxisCount: 2,
                           childAspectRatio: 0.65,
                         ),
-                        itemCount: product.similarProducts.length,
+                        itemCount: similarProduct.length,
                         itemBuilder: (context, index) {
-                          return ApiProductCard(product: product.similarProducts[index]);
+                          final similar = similarProduct[index];
+                          return Card(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: MediaQuery.of(context).size.height*0.20,
+                                  child: similar.image != null
+                                      ? Image.network(
+                                    similar.image!.startsWith("http")?"${similar.image}":
+                                          'http://localhost/dailygro/uploads/${similar.image}',
+                                          fit: BoxFit.fill,
+                                          width: double.infinity,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey[200],
+                                              child: Icon(Icons.image, color: Colors.grey),
+                                            );
+                                          },
+                                        )
+                                      : Container(
+                                          color: Colors.grey[200],
+                                          child: Icon(Icons.image, color: Colors.grey),
+                                        ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        similar.name,
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text('₹${similar.price}'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       ),
                     ],

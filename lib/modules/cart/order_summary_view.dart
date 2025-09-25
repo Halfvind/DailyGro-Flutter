@@ -189,6 +189,7 @@ class OrderSummaryView extends StatelessWidget {
                                     ),
                                     child: item.image != null
                                         ? Image.network(
+                                      item.image!.startsWith('http')?'${item.image}':
                                             'http://localhost/dailygro/uploads/${item.image}',
                                             fit: BoxFit.cover,
                                             errorBuilder: (context, error, stackTrace) {

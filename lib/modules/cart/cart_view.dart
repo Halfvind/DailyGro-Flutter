@@ -99,6 +99,7 @@ class _CartViewState extends State<CartView> {
                           ),
                           child: cartItem.image != null
                               ? Image.network(
+                            cartItem.image!.startsWith('http')?'${cartItem.image}':
                             'http://localhost/dailygro/uploads/${cartItem.image}',
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {

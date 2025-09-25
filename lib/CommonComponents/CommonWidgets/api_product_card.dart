@@ -52,7 +52,7 @@ class ApiProductCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppSizes.radius(12)),
                   child: product.image != null && product.image!.isNotEmpty
                       ? Image.network(
-                          'http://localhost/dailygro/uploads/${product.image}',
+                    product!.image!.startsWith('http')?'${product.image}': 'http://localhost/dailygro/uploads/${product.image}',
                           height: AppSizes.height(150),
                           width: double.infinity,
                           fit: BoxFit.cover,
@@ -66,6 +66,7 @@ class ApiProductCard extends StatelessWidget {
                             );
                           },
                         )
+
                       : Center(
                           child: Icon(
                             Icons.local_grocery_store,

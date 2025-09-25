@@ -23,11 +23,20 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   final _licenseController = TextEditingController();
   final _bankAccountController = TextEditingController();
   final _upiController = TextEditingController();
-  final VendorController _vendorController = Get.find<VendorController>();
+  late final VendorController _vendorController;
 
   @override
   void initState() {
     super.initState();
+    _initializeController();
+  }
+  
+  void _initializeController() {
+    try {
+      _vendorController = Get.find<VendorController>();
+    } catch (e) {
+      _vendorController = Get.put(VendorController());
+    }
     _loadVendorProfile();
   }
 
@@ -39,20 +48,14 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   void _updateTextFields() {
     final vendor = _vendorController.vendor;
     if (vendor != null && mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _shopNameController.text = vendor.businessName;
-            _ownerNameController.text = vendor.name;
-            _phoneController.text = vendor.phone;
-            _emailController.text = vendor.email;
-            _addressController.text = vendor.address;
-            _licenseController.text = _vendorController.businessLicense;
-            _upiController.text = _vendorController.upiId;
-            _bankAccountController.text = _vendorController.bankAccount;
-          });
-        }
-      });
+      _shopNameController.text = vendor.businessName;
+      _ownerNameController.text = vendor.name;
+      _phoneController.text = vendor.phone;
+      _emailController.text = vendor.email;
+      _addressController.text = vendor.address;
+      _licenseController.text = _vendorController.businessLicense;
+      _upiController.text = _vendorController.upiId;
+      _bankAccountController.text = _vendorController.bankAccount;
     }
   }
 

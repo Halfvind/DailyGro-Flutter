@@ -147,6 +147,7 @@ class RiderController extends GetxController {
             totalOrders: riderProfile.value!.totalOrders,
             totalEarnings: riderProfile.value!.totalEarnings,
             createdAt: riderProfile.value!.createdAt,
+            earningsHistory: riderProfile.value!.earningsHistory,
           );
         }
         Get.snackbar('Status Updated', 

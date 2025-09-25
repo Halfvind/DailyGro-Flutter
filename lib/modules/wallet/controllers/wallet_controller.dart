@@ -125,6 +125,47 @@ class WalletController extends GetxController {
     }
   }
 
+  Future<bool> addMoney(double amount) async {
+    if (_walletRepository == null || _globalController == null) {
+      print('Wallet services not initialized');
+      return false;
+    }
+    
+    int userIdInt = _globalController!.userId.value;
+    if (userIdInt == 0) {
+      print('User ID is 0, cannot add money');
+      return false;
+    }
+    
+    isLoading.value = true;
+    print('Adding money: ₹$amount for user ID: $userIdInt');
+
+    try {
+      final response = await _walletRepository!.addMoney(userIdInt, amount);
+      print('Add money API response: ${response.body}');
+
+      if (response.isOk && response.body != null) {
+        if (response.body['status'] == 'success') {
+          // Reload wallet to get updated balance
+          await loadWallet();
+          print('Money added successfully');
+          return true;
+        } else {
+          print('Add money failed: ${response.body['message']}');
+          return false;
+        }
+      } else {
+        print('Add money API failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error adding money: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   double get balance => wallet.value?.balance ?? 0.0;
   int get availableCoupons => 3; // Static for now
 }

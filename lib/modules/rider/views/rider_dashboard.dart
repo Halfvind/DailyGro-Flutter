@@ -1,3 +1,4 @@
+import 'package:dailygro/modules/rider/views/rider_earnings_screen.dart';
 import 'package:dailygro/modules/rider/views/rider_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -191,13 +192,14 @@ class RiderDashboard extends StatelessWidget {
               'Earnings',
               Icons.monetization_on,
               Colors.green,
-              () => Get.toNamed('/rider/earnings'),
+
+              () => Get.to(RiderEarningsScreen())
             ),
             _buildActionCard(
               'Profile',
               Icons.person,
               Colors.orange,
-              () => Get.to(RiderProfileScreen())
+              () => Get.to(const RiderProfileScreen())
             ),
             _buildActionCard(
               'Support',
