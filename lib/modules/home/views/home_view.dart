@@ -53,11 +53,11 @@ class HomeView extends StatelessWidget {
                       padding: EdgeInsets.all(AppSizes.p16),
                       child: Column(
                         children: [
-                          const HomeHeader(),
+                          const HomeHeader(), // ✅ API integrated - shows user location and search
                           AppSizes.vSpace(20),
-                          const OffersBanner(),
+                          const OffersBanner(), // 🔄 Static data - TODO: Integrate with offers API
                           AppSizes.vSpace(20),
-                          // Removed QuickActionsEnhanced widget
+                          _buildQuickActions(), // 🔄 Static data - TODO: Integrate with services API
                         ],
                       ),
                     ),
@@ -70,19 +70,18 @@ class HomeView extends StatelessWidget {
                       children: [
                         AppSizes.vSpace(10),
                         _buildSectionTitle('Shop by Category', 'View All'),
-
                         AppSizes.vSpace(12),
-                        const CategoryList(),
+                        const CategoryList(), // ✅ API integrated - loads categories from API
+                      /*  AppSizes.vSpace(30),
+                        _buildSectionTitle('Featured Products', 'See All'),*/
+                        AppSizes.vSpace(12),
+                        const FeaturedProducts(), // ✅ API integrated - loads featured products
+                       /* AppSizes.vSpace(30),
+                        _buildSectionTitle('Recommended for You', 'See All'),*/
+                        AppSizes.vSpace(12),
+                        const RecommendedProducts(), // ✅ API integrated - loads recommended products
                         AppSizes.vSpace(30),
-                       /* const CategoryProducts(),
-                        AppSizes.vSpace(20),*/
-                      //  _buildSectionTitle('Featured Products', 'See All'),
-                        AppSizes.vSpace(12),
-                        const FeaturedProducts(),
-                        AppSizes.vSpace(30),
-                      //  _buildSectionTitle('Recommended for You', 'See All'),
-                        AppSizes.vSpace(12),
-                        const RecommendedProducts(),
+                        _buildDealsOfTheDay(), // 🔄 Static data - TODO: Integrate with deals API
                         AppSizes.vSpace(30),
                       ],
                     ),
@@ -151,5 +150,95 @@ class HomeView extends StatelessWidget {
         Get.to(() => const RecommendedProductsView());
         break;
     }
+  }
+
+  // 🔄 Static data - TODO: Integrate with services API
+  Widget _buildQuickActions() {
+    final actions = [
+      {'icon': Icons.flash_on, 'title': '10 Min', 'color': Colors.orange},
+      {'icon': Icons.local_pharmacy, 'title': 'Pharmacy', 'color': Colors.red},
+      {'icon': Icons.pets, 'title': 'Pet Care', 'color': Colors.purple},
+      {'icon': Icons.cleaning_services, 'title': 'Cleaning', 'color': Colors.blue},
+    ];
+
+    return Container(
+      height: AppSizes.height(80),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: actions.length,
+        itemBuilder: (context, index) {
+          final action = actions[index];
+          return Container(
+            width: AppSizes.width(80),
+            margin: EdgeInsets.only(right: AppSizes.width(12)),
+            decoration: BoxDecoration(
+              color: (action['color'] as Color).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppSizes.radius(12)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(action['icon'] as IconData, color: action['color'] as Color, size: 24),
+                AppSizes.vSpace(4),
+                Text(action['title'] as String, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // 🔄 Static data - TODO: Integrate with deals API
+  Widget _buildDealsOfTheDay() {
+    return Column(
+      children: [
+        _buildSectionTitle('Deals of the Day', 'View All'),
+        AppSizes.vSpace(12),
+        Container(
+          height: AppSizes.height(120),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Container(
+                width: AppSizes.width(200),
+                margin: EdgeInsets.only(right: AppSizes.width(12)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radius(12)),
+                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      margin: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.local_offer, color: Colors.orange),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Deal ${index + 1}', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('Up to 40% OFF', style: TextStyle(color: Colors.green, fontSize: 12)),
+                          Text('Limited time', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

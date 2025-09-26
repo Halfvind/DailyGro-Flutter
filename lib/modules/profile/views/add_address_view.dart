@@ -4,7 +4,7 @@ import '../../../CommonComponents/CommonUtils/app_sizes.dart';
 import '../../../models/address_model.dart';
 import '../../address/controllers/address_controller.dart';
 
-class AddAddressView extends GetView<AddressController> {
+class AddAddressView extends StatelessWidget {
   final AddressModel? address;
   final int? index;
 
@@ -12,6 +12,7 @@ class AddAddressView extends GetView<AddressController> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<AddressController>();
     final isEditing = address != null;
     
     final titleController = TextEditingController(text: address?.title ?? '');
@@ -118,30 +119,26 @@ class AddAddressView extends GetView<AddressController> {
                     stateController,
                     pincodeController,
                   ])) {
-                    final newAddress = AddressModel(
-                      title: titleController.text,
-                      phone: phoneController.text,
-                      city: cityController.text,
-                      state: stateController.text,
-                      pincode: pincodeController.text,
-                      isDefault: true,
-                      addressId: 1, userId: 1, name: '', addressLine: '',
-                      addressType: '', createdAt: '',
-                    );
+                    final addressData = {
+                      'title': titleController.text,
+                      'name': nameController.text,
+                      'phone': phoneController.text,
+                      'address_line': address1Controller.text,
+                      'landmark': address2Controller.text,
+                      'city': cityController.text,
+                      'state': stateController.text,
+                      'pincode': pincodeController.text,
+                      'is_default': isDefaultController.value,
+                      'address_type': titleController.text,
+                    };
 
-                    if (isEditing && index != null) {
-                      //controller.updateAddress(index!, newAddress);
+                    if (isEditing && address != null) {
+                      controller.updateAddress(address!.addressId, addressData);
                     } else {
-                      //controller.addAddress(newAddress);
+                      controller.addAddress(addressData);
                     }
 
                     Get.back();
-                    Get.snackbar(
-                      'Success',
-                      isEditing ? 'Address updated successfully' : 'Address added successfully',
-                      backgroundColor: Colors.green,
-                      colorText: Colors.white,
-                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(

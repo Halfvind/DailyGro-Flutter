@@ -48,7 +48,7 @@ class FeaturedProducts extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  "View All",
+                  'View All',
                   style: TextStyle(
                     fontSize: AppSizes.font(12),
                     fontWeight: FontWeight.w600,

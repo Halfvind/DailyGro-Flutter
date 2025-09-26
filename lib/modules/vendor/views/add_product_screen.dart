@@ -586,7 +586,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
 
       if (jsonResponse['status'] == 'success') {
-        return List<String>.from(jsonResponse['files'].map((f) => f['short_path']));
+        return List<String>.from(jsonResponse['files'].map((f) => f['full_url']));
       }
     } catch (e) {
       print('Image upload error: $e');
